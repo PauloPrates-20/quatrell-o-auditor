@@ -204,7 +204,8 @@ var commandFoldersPath = import_node_path.default.join(__dirname, "commands");
 var commandFolders = import_node_fs.default.readdirSync(commandFoldersPath);
 for (const folder of commandFolders) {
   const commandFilesPath = import_node_path.default.join(commandFoldersPath, folder);
-  const commandFiles = import_node_fs.default.readdirSync(commandFilesPath).filter((file) => file.endsWith(".ts"));
+  const commandFiles = import_node_fs.default.readdirSync(commandFilesPath).filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+
   for (const file of commandFiles) {
     const filePath = import_node_path.default.join(commandFilesPath, file);
     const command = require(filePath);
