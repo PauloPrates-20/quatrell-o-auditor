@@ -22,10 +22,12 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// src/main.ts
-var import_node_fs = __toESM(require("fs"));
-var import_node_path = __toESM(require("path"));
+// src/commands/client/registrar.ts
 var import_discord = require("discord.js");
+
+// src/lib/firebase/firestoreQuerys.ts
+var import_app = require("firebase/app");
+var import_firestore = require("firebase/firestore");
 
 // src/config.ts
 var import_dotenv = __toESM(require("dotenv"));
@@ -58,11 +60,6 @@ var firebaseConfig = {
 var collections = {
   users: COLLECTIONS_USERS
 };
-var token = DISCORD_TOKEN;
-
-// src/lib/firebase/firestoreQuerys.ts
-var import_app = require("firebase/app");
-var import_firestore = require("firebase/firestore");
 
 // src/lib/tables.ts
 var levelsTable = [
@@ -176,6 +173,16 @@ var Player = class {
 // src/lib/firebase/firestoreQuerys.ts
 var app = (0, import_app.initializeApp)(firebaseConfig);
 var db = (0, import_firestore.getFirestore)(app);
+async function registerPlayer(playerData) {
+  const ref = (0, import_firestore.doc)(db, collections.users, playerData.id);
+  const convertedPlayer = Object.assign({}, playerData);
+  try {
+    await (0, import_firestore.setDoc)(ref, convertedPlayer);
+    console.log(`Player ${playerData.id} registered successfuly.`);
+  } catch (error) {
+    console.error(`Error registering player: ${error}`);
+  }
+}
 async function loadPlayer(playerId) {
   const ref = (0, import_firestore.doc)(db, collections.users, playerId);
   try {
@@ -191,101 +198,23 @@ async function loadPlayer(playerId) {
   }
 }
 
-// src/main.ts
-var client = new import_discord.Client({
-  intents: [
-    import_discord.GatewayIntentBits.Guilds,
-    import_discord.GatewayIntentBits.GuildMessages,
-    import_discord.GatewayIntentBits.MessageContent
-  ]
-});
-client.commands = new import_discord.Collection();
-var commandFoldersPath = import_node_path.default.join(__dirname, "commands");
-var commandFolders = import_node_fs.default.readdirSync(commandFoldersPath);
-for (const folder of commandFolders) {
-  const commandFilesPath = import_node_path.default.join(commandFoldersPath, folder);
-  const commandFiles = import_node_fs.default.readdirSync(commandFilesPath).filter((file) => file.endsWith(".ts"));
-  for (const file of commandFiles) {
-    const filePath = import_node_path.default.join(commandFilesPath, file);
-    const command = require(filePath);
-    if ("data" in command && "execute" in command) {
-      client.commands.set(command.data.name, command);
-    } else {
-      console.log(`[WARNING] Command at ${filePath} is missing a required "data" or "execute" property.`);
+// src/commands/client/registrar.ts
+module.exports = {
+  data: new import_discord.SlashCommandBuilder().setName("registrar").setDescription("Registra o jogador no banco de dados do servidor."),
+  async execute(interaction) {
+    await interaction.deferReply({ ephemeral: true });
+    let player = await loadPlayer(interaction.member.id);
+    if (player) {
+      await interaction.editReply("Jogador j\xE1 cadastrado!");
+      return;
+    }
+    player = new Player(interaction.member.id);
+    try {
+      await registerPlayer(player);
+      await interaction.editReply("Jogador cadastrado com sucesso!");
+      return;
+    } catch (error) {
+      await interaction.editReply("Falha ao cadastrar jogador: " + error);
     }
   }
-}
-client.once(import_discord.Events.ClientReady, (readyClient) => {
-  console.log(`Ready. Logged as ${readyClient.user.tag}`);
-});
-client.on(import_discord.Events.InteractionCreate, async (interaction) => {
-  if (interaction.isAutocomplete()) {
-    const command2 = client.commands.get(interaction.commandName);
-    if (command2.data.name === "personagem") {
-      const player = await loadPlayer(interaction.member.id);
-      if (!player) {
-        await interaction.respond([]);
-        return;
-      }
-      const focusedOption = interaction.options.getFocused(true);
-      if (focusedOption.name === "personagem") {
-        const choices = Object.keys(player.characters).map((key) => {
-          const character = player.characters[key];
-          return {
-            // What the player sees
-            name: character.name,
-            // The actual value passed to the command
-            value: character.name
-          };
-        });
-        const filteredChoices = choices.filter((choice) => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
-        await interaction.respond(filteredChoices.slice(0, 25));
-      }
-    } else if (command2.data.name === "ajustar" && interaction.options.getSubcommand() === "xp") {
-      const focusedOption = interaction.options.getFocused(true);
-      if (focusedOption.name === "personagem") {
-        const options = interaction.options.data[0]?.options || [];
-        const jogadorOption = options.find((option) => option.name === "jogador");
-        const target = jogadorOption.value;
-        console.log("Target member: ", target);
-        if (!target) {
-          console.error("Target member was not found.");
-          await interaction.respond([]);
-          return;
-        }
-        const targetMember = await interaction.guild.members.fetch(target);
-        const player = await loadPlayer(targetMember.id);
-        if (!player) {
-          await interaction.respond([]);
-          return;
-        }
-        const choices = Object.keys(player.characters).map((key) => {
-          const character = player.characters[key];
-          return {
-            name: character.name,
-            value: character.name
-          };
-        });
-        const filteredChoices = choices.filter((choice) => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
-        await interaction.respond(filteredChoices);
-      }
-    }
-  }
-  if (!interaction.isChatInputCommand()) return;
-  const interactionClient = interaction.client;
-  const command = interactionClient.commands.get(interaction.commandName);
-  if (!command) {
-    console.error(`No command matching ${interaction.commandName} found`);
-    return;
-  }
-  try {
-    command.execute(interaction);
-  } catch (error) {
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
-    } else {
-      await interaction.reply({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
-    }
-  }
-});
-client.login(token);
+};

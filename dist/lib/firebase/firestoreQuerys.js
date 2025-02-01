@@ -5,6 +5,10 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -21,11 +25,20 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/main.ts
-var import_node_fs = __toESM(require("fs"));
-var import_node_path = __toESM(require("path"));
-var import_discord = require("discord.js");
+// src/lib/firebase/firestoreQuerys.ts
+var firestoreQuerys_exports = {};
+__export(firestoreQuerys_exports, {
+  deletePlayer: () => deletePlayer,
+  loadPlayer: () => loadPlayer,
+  registerLog: () => registerLog,
+  registerPlayer: () => registerPlayer,
+  updatePlayer: () => updatePlayer
+});
+module.exports = __toCommonJS(firestoreQuerys_exports);
+var import_app = require("firebase/app");
+var import_firestore = require("firebase/firestore");
 
 // src/config.ts
 var import_dotenv = __toESM(require("dotenv"));
@@ -58,11 +71,6 @@ var firebaseConfig = {
 var collections = {
   users: COLLECTIONS_USERS
 };
-var token = DISCORD_TOKEN;
-
-// src/lib/firebase/firestoreQuerys.ts
-var import_app = require("firebase/app");
-var import_firestore = require("firebase/firestore");
 
 // src/lib/tables.ts
 var levelsTable = [
@@ -176,6 +184,29 @@ var Player = class {
 // src/lib/firebase/firestoreQuerys.ts
 var app = (0, import_app.initializeApp)(firebaseConfig);
 var db = (0, import_firestore.getFirestore)(app);
+async function registerPlayer(playerData) {
+  const ref = (0, import_firestore.doc)(db, collections.users, playerData.id);
+  const convertedPlayer = Object.assign({}, playerData);
+  try {
+    await (0, import_firestore.setDoc)(ref, convertedPlayer);
+    console.log(`Player ${playerData.id} registered successfuly.`);
+  } catch (error) {
+    console.error(`Error registering player: ${error}`);
+  }
+}
+async function registerLog(logData, playerId) {
+  const ref = (0, import_firestore.collection)(db, collections.users, playerId.toString(), "logs");
+  const convertedLog = {
+    ...logData,
+    timestamp: (0, import_firestore.serverTimestamp)()
+  };
+  try {
+    await (0, import_firestore.addDoc)(ref, convertedLog);
+    console.log(`Log registered succesfully for player ${playerId}.`);
+  } catch (error) {
+    console.error(`Error registering log: ${error}`);
+  }
+}
 async function loadPlayer(playerId) {
   const ref = (0, import_firestore.doc)(db, collections.users, playerId);
   try {
@@ -190,102 +221,31 @@ async function loadPlayer(playerId) {
     console.error(error.message);
   }
 }
-
-// src/main.ts
-var client = new import_discord.Client({
-  intents: [
-    import_discord.GatewayIntentBits.Guilds,
-    import_discord.GatewayIntentBits.GuildMessages,
-    import_discord.GatewayIntentBits.MessageContent
-  ]
-});
-client.commands = new import_discord.Collection();
-var commandFoldersPath = import_node_path.default.join(__dirname, "commands");
-var commandFolders = import_node_fs.default.readdirSync(commandFoldersPath);
-for (const folder of commandFolders) {
-  const commandFilesPath = import_node_path.default.join(commandFoldersPath, folder);
-  const commandFiles = import_node_fs.default.readdirSync(commandFilesPath).filter((file) => file.endsWith(".ts"));
-  for (const file of commandFiles) {
-    const filePath = import_node_path.default.join(commandFilesPath, file);
-    const command = require(filePath);
-    if ("data" in command && "execute" in command) {
-      client.commands.set(command.data.name, command);
-    } else {
-      console.log(`[WARNING] Command at ${filePath} is missing a required "data" or "execute" property.`);
-    }
+async function updatePlayer(playerData) {
+  const ref = (0, import_firestore.doc)(db, collections.users, playerData.id);
+  const data = Object.assign({}, playerData);
+  delete data.id;
+  try {
+    await (0, import_firestore.updateDoc)(ref, data);
+    console.log(`Player ${playerData.id} updated successfuly`);
+  } catch (error) {
+    console.error(`Unable to update player ${playerData.id}: ${error}`);
   }
 }
-client.once(import_discord.Events.ClientReady, (readyClient) => {
-  console.log(`Ready. Logged as ${readyClient.user.tag}`);
-});
-client.on(import_discord.Events.InteractionCreate, async (interaction) => {
-  if (interaction.isAutocomplete()) {
-    const command2 = client.commands.get(interaction.commandName);
-    if (command2.data.name === "personagem") {
-      const player = await loadPlayer(interaction.member.id);
-      if (!player) {
-        await interaction.respond([]);
-        return;
-      }
-      const focusedOption = interaction.options.getFocused(true);
-      if (focusedOption.name === "personagem") {
-        const choices = Object.keys(player.characters).map((key) => {
-          const character = player.characters[key];
-          return {
-            // What the player sees
-            name: character.name,
-            // The actual value passed to the command
-            value: character.name
-          };
-        });
-        const filteredChoices = choices.filter((choice) => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
-        await interaction.respond(filteredChoices.slice(0, 25));
-      }
-    } else if (command2.data.name === "ajustar" && interaction.options.getSubcommand() === "xp") {
-      const focusedOption = interaction.options.getFocused(true);
-      if (focusedOption.name === "personagem") {
-        const options = interaction.options.data[0]?.options || [];
-        const jogadorOption = options.find((option) => option.name === "jogador");
-        const target = jogadorOption.value;
-        console.log("Target member: ", target);
-        if (!target) {
-          console.error("Target member was not found.");
-          await interaction.respond([]);
-          return;
-        }
-        const targetMember = await interaction.guild.members.fetch(target);
-        const player = await loadPlayer(targetMember.id);
-        if (!player) {
-          await interaction.respond([]);
-          return;
-        }
-        const choices = Object.keys(player.characters).map((key) => {
-          const character = player.characters[key];
-          return {
-            name: character.name,
-            value: character.name
-          };
-        });
-        const filteredChoices = choices.filter((choice) => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
-        await interaction.respond(filteredChoices);
-      }
-    }
-  }
-  if (!interaction.isChatInputCommand()) return;
-  const interactionClient = interaction.client;
-  const command = interactionClient.commands.get(interaction.commandName);
-  if (!command) {
-    console.error(`No command matching ${interaction.commandName} found`);
-    return;
-  }
+async function deletePlayer(playerId) {
+  const ref = (0, import_firestore.doc)(db, collections.users, playerId.toString());
   try {
-    command.execute(interaction);
+    await (0, import_firestore.deleteDoc)(ref);
+    console.log(`Player ${playerId} deleted successfully.`);
   } catch (error) {
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
-    } else {
-      await interaction.reply({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
-    }
+    console.error(`Failed to delete player ${playerId}: ${error}`);
   }
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  deletePlayer,
+  loadPlayer,
+  registerLog,
+  registerPlayer,
+  updatePlayer
 });
-client.login(token);
