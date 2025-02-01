@@ -1,0 +1,8 @@
+# Node modules
+node_modules/
+
+# Test files
+test.*
+
+# .env files
+.env
