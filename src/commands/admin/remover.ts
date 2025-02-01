@@ -1,6 +1,6 @@
 /* Imports */
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { loadPlayer, deletePlayer } = require('../../lib/firebase/firestoreQuerys');
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import { loadPlayer, deletePlayer } from '../../lib/firebase/firestoreQuerys';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -11,9 +11,9 @@ module.exports = {
 				.setDescription('O jogador a ser removido')
 				.setRequired(true))
 		.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
-		const target = interaction.options.getMember('jogador');
+		const target = interaction.options.getMember('jogador') as GuildMember;
 		const player = await loadPlayer(target.id);
 
 		if (!player) {

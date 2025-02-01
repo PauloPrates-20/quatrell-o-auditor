@@ -1,5 +1,5 @@
 // Character levels table
-const levelsTable = [
+export const levelsTable = [
 	{ xp: 0, level: 1 },
 	{ xp: 1, level: 2 },
 	{ xp: 2, level: 3 },
@@ -24,7 +24,7 @@ const levelsTable = [
 ];
 
 // Character tiers table
-const tiersTable = [
+export const tiersTable = [
 	{ level: 1, tier: '<:01_iniciante:1012215299774357504>' },
 	{ level: 4, tier: '<:02_cobre:1012215321421168710>' },
 	{ level: 7, tier: '<:03_prata:1012215335774064711>' },
@@ -33,8 +33,3 @@ const tiersTable = [
 	{ level: 16, tier: '<:06_cobalto:1012215386164428930>' },
 	{ level: 19, tier: '<:07_adamante:1012215399733018714>' },
 ];
-
-module.exports = {
-	levelsTable,
-	tiersTable,
-};

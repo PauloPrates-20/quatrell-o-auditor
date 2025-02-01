@@ -1,10 +1,10 @@
 /* Imports */
-const { SlashCommandBuilder } = require('discord.js');
-const { loadPlayer, updatePlayer, registerLog } = require('../../lib/firebase/firestoreQuerys');
-const { Character, Log } = require('../../lib/classes');
-const { sourceValidation } = require('../../lib/validation');
-const { channels } = require('../../config');
-const { xpLogBuilder } = require('../../lib/messages');
+import { BaseGuildTextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { Character, Log } from '../../lib/classes';
+import { sourceValidation } from '../../lib/validation';
+import { channels } from '../../config';
+import { xpLogBuilder } from '../../lib/messages';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -41,10 +41,10 @@ module.exports = {
 				.addIntegerOption(option => option.setName('xp').setDescription('Quantidade de xp a subtrair').setRequired(true))
 				.addStringOption(option => option.setName('personagem').setDescription('Nome do personagem').setRequired(true).setAutocomplete(true))
 				.addStringOption(option => option.setName('origem').setDescription('URL apontando para a mensagem que justifica a retirada de XP.').setRequired(true))),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
 
-		const player = await loadPlayer(interaction.member.id);
+		const player = await loadPlayer((interaction.member as GuildMember).id);
 
 		if (!player) {
 			await interaction.editReply('Jogador não cadastrado. Utilize /registrar para se cadastrar.');
@@ -52,7 +52,7 @@ module.exports = {
 		}
 
 		const subcommand = interaction.options.getSubcommand();
-		const rawCharacterName = interaction.options.getString('personagem');
+		const rawCharacterName = interaction.options.getString('personagem')!;
 		let characterName = rawCharacterName.trim();
 
 		if (/\d/.test(characterName.charAt(0))) {
@@ -95,12 +95,12 @@ module.exports = {
 			try {
 				await updatePlayer(player);
 				await interaction.editReply(`Personagem ${characterName} removido com sucesso.`);
-				interaction.client.channels.cache.get(channels.fonteXp).send(`Personagem ${characterName} de <@${interaction.member.id}> deletado.`);
+				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(`Personagem ${characterName} de <@${(interaction.member as GuildMember).id}> deletado.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao deletar personagem: ${error}`);
 			}
 		} else if (subcommand === 'renomear') {
-			const rawNewName = interaction.options.getString('nome');
+			const rawNewName = interaction.options.getString('nome')!;
 			let newName = rawNewName.trim();
 
 			if (/\d/.test(newName.charAt(0))) {
@@ -132,12 +132,12 @@ module.exports = {
 			try {
 				await updatePlayer(player);
 				await interaction.editReply(`Personagem ${oldName} renomeado para ${newName}.`);
-				interaction.client.channels.cache.get(channels.fonteXp).send(`Personagem ${oldName} de <@${interaction.member.id}> renomeado para ${newName}.`);
+				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(`Personagem ${oldName} de <@${(interaction.member as GuildMember).id}> renomeado para ${newName}.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao renomear personagem: ${error}`);
 			}
 		} else if (subcommand === 'add-xp') {
-			const source = interaction.options.getString('origem');
+			const source = interaction.options.getString('origem')!;
 
 			if (!sourceValidation(source)) {
 				interaction.editReply('Origem inválida.');
@@ -149,23 +149,23 @@ module.exports = {
 				return;
 			}
 
-			const addedXp = interaction.options.getInteger('xp');
+			const addedXp = interaction.options.getInteger('xp')!;
 
 			player.addXp(characterKey, addedXp);
 
 			try {
-				const log = new Log('xp', interaction.member.id, channels.fonteXp, xpLogBuilder(player, characterKey, addedXp, source));
+				const log = new Log('xp', (interaction.member as GuildMember).id, channels.xp!, xpLogBuilder(player, characterKey, addedXp, source));
 
 				await updatePlayer(player);
-				await registerLog(log, interaction.member.id);
-				interaction.client.channels.cache.get(channels.fonteXp).send(log.content);
+				await registerLog(log, (interaction.member as GuildMember).id);
+				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(log.content);
 				await interaction.editReply(`${addedXp} XP adicionados ao personagem ${characterName} com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao adicionar XP ao personagem: ${error}`);
 			}
 		} else if (subcommand === 'sub-xp') {
-			const source = interaction.options.getString('origem');
-			const removedXp = interaction.options.getInteger('xp');
+			const source = interaction.options.getString('origem')!;
+			const removedXp = interaction.options.getInteger('xp')!;
 
 			if (!sourceValidation(source)) {
 				interaction.editReply('Origem inválida.');
@@ -186,11 +186,11 @@ module.exports = {
 			player.subXp(characterKey, removedXp);
 
 			try {
-				const log = new Log('xp', interaction.member.id, channels.fonteXp, xpLogBuilder(player, characterKey, -removedXp, source));
+				const log = new Log('xp', (interaction.member as GuildMember).id, channels.xp!, xpLogBuilder(player, characterKey, -removedXp, source));
 
 				await updatePlayer(player);
-				await registerLog(log, interaction.member.id);
-				interaction.client.channels.cache.get(channels.fonteXp).send(log.content);
+				await registerLog(log, (interaction.member as GuildMember).id);
+				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(log.content);
 				await interaction.editReply(`${removedXp} XP subtraídos do personagem ${characterName} com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao subtrair XP do personagem: ${error}`);

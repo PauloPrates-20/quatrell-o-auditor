@@ -1,10 +1,11 @@
 /* Imports */
-const { SlashCommandBuilder } = require('discord.js');
-const { loadPlayer, updatePlayer, registerLog } = require('../../lib/firebase/firestoreQuerys');
-const { Log } = require('../../lib/classes');
-const { goldLogBuilder, gemLogBuilder } = require('../../lib/messages');
-const { sourceValidation } = require('../../lib/validation');
-const { channels } = require('../../config');
+import { GuildMember ,BaseGuildTextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { Log } from '../../lib/classes';
+import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
+import { sourceValidation } from '../../lib/validation';
+import { channels } from '../../config';
+import { Gems } from '../../lib/definitions';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -35,18 +36,18 @@ module.exports = {
 				.addIntegerOption(option => option.setName('gemas').setDescription('Quantidade de gemas a depositar.').setRequired(true))
 				.addStringOption(option => option.setName('origem').setDescription('URL apontando para a mensagem que justifica a origem das gemas.').setRequired(true)),
 		),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
 
 		let channel;
 		const gemType = { comum: 'Comum', ressureicao: 'da Ressureição', transmutacao: 'da Transmutação' };
-		const author = interaction.member.id;
+		const author = (interaction.member as GuildMember)!.id;
 		const source = interaction.options.getString('origem');
 		const subcommand = interaction.options.getSubcommand();
 		const player = await loadPlayer(author);
 
 
-		if (!sourceValidation(source)) {
+		if (!sourceValidation(source!)) {
 			await interaction.editReply('Origem inválida.');
 			return;
 		}
@@ -57,35 +58,35 @@ module.exports = {
 		}
 
 		if (subcommand === 'ouro') {
-			channel = channels.banco;
+			channel = channels.bank;
 			const gold = interaction.options.getInteger('ouro');
 
-			player.addGold(gold);
+			player.addGold(gold!);
 
-			const goldLog = new Log('ouro', author.toString(), channel, goldLogBuilder(player, 'deposita', gold, source));
+			const goldLog = new Log('ouro', author, channel!, goldLogBuilder(player, 'deposita', gold!, source!));
 
 			try {
 				await updatePlayer(player);
 				await registerLog(goldLog, author);
-				interaction.client.channels.cache.get(channel).send(goldLog.content);
+				(interaction.client.channels.cache.get(channel!) as BaseGuildTextChannel)!.send(goldLog.content);
 				await interaction.editReply(`${gold} PO adicionados com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao depositar ouro: ${error}`);
 			}
 		} else if (subcommand === 'gema') {
-			channel = channels.gemas;
+			channel = channels.treasure;
 			const type = interaction.options.getString('tipo');
 			const gems = interaction.options.getInteger('gemas');
 
-			player.addGems(type, gems);
+			player.addGems(type as keyof Gems, gems!);
 
-			const gemLog = new Log('gema', author.toString(), channel, gemLogBuilder(player, type, gems, 'deposita', source));
+			const gemLog = new Log('gema', author, channel!, gemLogBuilder(player, type as keyof Gems, gems!, 'deposita', source!));
 
 			try {
 				await updatePlayer(player);
 				await registerLog(gemLog, author);
-				interaction.client.channels.cache.get(channel).send(gemLog.content);
-				await interaction.editReply(`${gems} Gema(s) ${gemType[type]} adicionada(s) com sucesso.`);
+				(interaction.client.channels.cache.get(channel!) as BaseGuildTextChannel)!.send(gemLog.content);
+				await interaction.editReply(`${gems} Gema(s) ${gemType[type as keyof Gems]} adicionada(s) com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao depositar gemas: ${error}`);
 			}

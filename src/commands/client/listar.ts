@@ -1,14 +1,14 @@
 /* Imports */
-const { SlashCommandBuilder } = require('discord.js');
-const { loadPlayer } = require('../../lib/firebase/firestoreQuerys');
+import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('listar')
 		.setDescription('Exibe uma lista de seus personagens cadastrados.'),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
-		const player = await loadPlayer(interaction.member.id);
+		const player = await loadPlayer((interaction.member as GuildMember).id);
 
 		if (!player) {
 			await interaction.editReply('Jogador não cadastrado. Utilize o comando /registrar para se cadastrar.');

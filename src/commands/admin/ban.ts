@@ -1,7 +1,7 @@
 /* Imports */
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { loadPlayer, deletePlayer } = require('../../lib/firebase/firestoreQuerys');
-const { channels } = require('../../config');
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, BaseGuildTextChannel } from 'discord.js';
+import { loadPlayer, deletePlayer } from '../../lib/firebase/firestoreQuerys';
+import { channels } from '../../config';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -10,9 +10,9 @@ module.exports = {
 		.addUserOption(option => option.setName('jogador').setDescription('Jogador a banir').setRequired(true))
 		.addStringOption(option => option.setName('motivo').setDescription('Motivo do banimento.'))
 		.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
-		const target = interaction.options.getUser('jogador').id;
+		const target = interaction.options.getUser('jogador')!.id;
 		const reason = interaction.options.getString('motivo') ? interaction.options.getString('motivo') : 'Motivo não especificado.';
 
 		if (target === interaction.user.id) {
@@ -20,7 +20,7 @@ module.exports = {
 			return;
 		}
 
-		const player = await loadPlayer(interaction.options.getMember('jogador').id);
+		const player = await loadPlayer(target);
 		let deleted = false;
 
 		if (player) {
@@ -32,8 +32,8 @@ module.exports = {
 			}
 		}
 
-		interaction.guild.members.ban(target, { reason: reason });
+		interaction.guild!.members.ban(target, { reason: reason! });
 		await interaction.editReply(`Usuário <@${target}> banido. ${deleted ? 'Dados do jogador deletados.' : 'Sem dados do jogador para deletar.'}`);
-		interaction.client.channels.cache.get(channels.geral).send(`Usuário <@${target}> banido por: ${reason}`);
+		(interaction.client.channels.cache.get(channels.general!) as BaseGuildTextChannel).send(`Usuário <@${target}> banido por: ${reason}`);
 	},
 };

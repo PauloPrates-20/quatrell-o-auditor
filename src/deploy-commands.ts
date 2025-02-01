@@ -1,11 +1,11 @@
 /* Imports */
 // Require node's native file system modules
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 // Require necessary discord.js classes
-const { REST, Routes } = require('discord.js');
+import { REST, Routes } from 'discord.js';
 // Require necessary config params
-const { clientId, guildId, token } = require('./config');
+import { clientId, guildId, token } from './config';
 
 const commands = [];
 // Grab all the command folders from the commands directory
@@ -15,7 +15,7 @@ const commandFolders = fs.readdirSync(commandFoldersPath);
 for (const folder of commandFolders) {
 	// Grab all the command files from the commands directory
 	const commandFilesPath = path.join(commandFoldersPath, folder);
-	const commandFiles = fs.readdirSync(commandFilesPath).filter(file => file.endsWith('.js'));
+	const commandFiles = fs.readdirSync(commandFilesPath).filter((file: any) => file.endsWith('.js'));
 
 	// Grab the SlachCommandBuilder#toJSON() output for each command's data for deployment
 	for (const file of commandFiles) {
@@ -30,7 +30,7 @@ for (const folder of commandFolders) {
 }
 
 // Construct and prepare an instance of the REST module
-const rest = new REST().setToken(token);
+const rest = new REST().setToken(token!);
 
 // Deploy the commands
 (async () => {
@@ -39,11 +39,11 @@ const rest = new REST().setToken(token);
 
 		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
-			Routes.applicationGuildCommands(clientId, guildId),
+			Routes.applicationGuildCommands(clientId!, guildId!),
 			{ body: commands },
 		);
 
-		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+		console.log(`Successfully reloaded ${(data as any).length} application (/) commands.`);
 	} catch (error) {
 		console.error(error);
 	}

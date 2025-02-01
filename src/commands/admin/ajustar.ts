@@ -1,7 +1,8 @@
 /* Imports */
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { loadPlayer, updatePlayer } = require('../../lib/firebase/firestoreQuerys');
-const { channels } = require('../../config');
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember, BaseGuildTextChannel } from 'discord.js';
+import { loadPlayer, updatePlayer } from '../../lib/firebase/firestoreQuerys';
+import { channels } from '../../config';
+import { Gems } from '../../lib/definitions';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -41,10 +42,10 @@ module.exports = {
 				.addStringOption(option => option.setName('personagem').setDescription('Nome do personagem a editar.').setRequired(true).setAutocomplete(true))
 				.addIntegerOption(option => option.setName('xp').setDescription('Quantidade de XP do personagem após o ajuste.').setRequired(true)),
 		),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
-		const target = interaction.options.getMember('jogador').id;
-		const author = interaction.member.id;
+		const target = interaction.options.getUser('jogador')!.id;
+		const author = (interaction.member as GuildMember).id;
 		const subcommand = interaction.options.getSubcommand();
 		const player = await loadPlayer(target);
 
@@ -54,8 +55,8 @@ module.exports = {
 		}
 
 		if (subcommand === 'ouro') {
-			const amount = interaction.options.getInteger('ouro');
-			const channel = interaction.client.channels.cache.get(channels.banco);
+			const amount = interaction.options.getInteger('ouro')!;
+			const channel = interaction.client.channels.cache.get(channels.bank!) as BaseGuildTextChannel;
 
 			if (amount < 0) {
 				await interaction.editReply('Valor não pode ser menor que 0.');
@@ -73,9 +74,9 @@ module.exports = {
 			}
 		} else if (subcommand === 'gema') {
 			const gemTypes = { comum: 'Comum', transmutacao: 'da Transmutação', ressureicao: 'da Ressureicao' };
-			const gemType = interaction.options.getString('tipo');
-			const amount = interaction.options.getInteger('gemas');
-			const channel = interaction.client.channels.cache.get(channels.gemas);
+			const gemType = interaction.options.getString('tipo') as keyof Gems;
+			const amount = interaction.options.getInteger('gemas')!;
+			const channel = interaction.client.channels.cache.get(channels.treasure!) as BaseGuildTextChannel;
 
 			if (amount < 0) {
 				await interaction.editReply('Valor não pode ser menor que 0.');
@@ -92,7 +93,7 @@ module.exports = {
 				await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
 			}
 		} else if (subcommand === 'xp') {
-			const rawCharacterName = interaction.options.getString('personagem');
+			const rawCharacterName = interaction.options.getString('personagem')!;
 			let characterName = rawCharacterName.trim();
 
 			if (/\d/.test(characterName.charAt(0))) {
@@ -107,8 +108,8 @@ module.exports = {
 
 			characterName = characterName.replace(/\s+/g, ' ');
 			const characterKey = characterName.toLowerCase().replace(' ', '_');
-			const amount = interaction.options.getInteger('xp');
-			const channel = interaction.client.channels.cache.get(channels.fonteXp);
+			const amount = interaction.options.getInteger('xp')!;
+			const channel = interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel;
 			const character = player.characters[characterKey];
 
 			if (amount < 0) {

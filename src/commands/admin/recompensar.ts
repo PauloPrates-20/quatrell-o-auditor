@@ -1,9 +1,10 @@
 /* Imports */
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { loadPlayer, updatePlayer, registerLog } = require('../../lib/firebase/firestoreQuerys');
-const { Log } = require('../../lib/classes');
-const { goldLogBuilder, gemLogBuilder } = require('../../lib/messages');
-const { channels } = require('../../config');
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember, BaseGuildTextChannel } from 'discord.js';
+import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { Log } from '../../lib/classes';
+import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
+import { channels } from '../../config';
+import { Gems } from '../../lib/definitions';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -35,10 +36,10 @@ module.exports = {
 				)
 				.addIntegerOption(option => option.setName('gemas').setDescription('Quantidade de gemas a depositar.').setRequired(true)),
 		),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
 
-		const target = interaction.options.getMember('jogador').id;
+		const target = (interaction.options.getMember('jogador') as GuildMember).id;
 		const subcommand = interaction.options.getSubcommand();
 		const source = 'Recompensa por doação ao servidor.';
 		const player = await loadPlayer(target);
@@ -49,8 +50,8 @@ module.exports = {
 		}
 
 		if (subcommand === 'ouro') {
-			const amount = interaction.options.getInteger('ouro');
-			const channel = channels.banco;
+			const amount = interaction.options.getInteger('ouro')!;
+			const channel = channels.bank!;
 
 			player.addGold(amount);
 
@@ -58,16 +59,16 @@ module.exports = {
 
 			try {
 				await Promise.all([updatePlayer(player), registerLog(log, target)]);
-				interaction.client.channels.cache.get(channel).send(log.content);
+				(interaction.client.channels.cache.get(channel) as BaseGuildTextChannel).send(log.content);
 				await interaction.editReply(`${amount} PO depositados para <@${target}>.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao depositar recompensas: ${error}`);
 			}
 		} else if (subcommand === 'gema') {
 			const gemTypes = { comum: 'Comum', transmutacao: 'da Transmutação', ressureicao: 'da Ressureição' };
-			const channel = channels.gemas;
-			const gemType = interaction.options.getString('tipo');
-			const amount = interaction.options.getInteger('gemas');
+			const channel = channels.treasure!;
+			const gemType = interaction.options.getString('tipo') as keyof Gems;
+			const amount = interaction.options.getInteger('gemas')!;
 
 			player.addGems(gemType, amount);
 
@@ -75,7 +76,7 @@ module.exports = {
 
 			try {
 				await Promise.all([updatePlayer(player), registerLog(log, target)]);
-				interaction.client.channels.cache.get(channel).send(log.content);
+				(interaction.client.channels.cache.get(channel) as BaseGuildTextChannel).send(log.content);
 				await interaction.editReply(`${amount} Gema(s) ${gemTypes[gemType]} depositadas para <@${target}>.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao depositar recompensas: ${error}`);

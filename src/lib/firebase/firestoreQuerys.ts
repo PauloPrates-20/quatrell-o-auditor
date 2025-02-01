@@ -1,9 +1,9 @@
 // Initializes firestore
-const { initializeApp } = require('firebase/app');
-const { getFirestore, doc, collection, getDoc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } = require('firebase/firestore');
-const { collections } = require('../../config');
-const { Player } = require('../classes');
-const { firebaseConfig } = require('../../config');
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, collection, getDoc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collections } from '../../config';
+import { Player, Log } from '../classes';
+import { firebaseConfig } from '../../config';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -11,9 +11,9 @@ const db = getFirestore(app);
 /* Firestore custom querys */
 
 // Player register function
-async function registerPlayer(playerData) {
+export async function registerPlayer(playerData: Player) {
 	// Sets doc reference and convert the data to firestore Map
-	const ref = doc(db, collections.users, playerData.id.toString());
+	const ref = doc(db, collections.users!, playerData.id);
 	const convertedPlayer = Object.assign({}, playerData);
 
 	try {
@@ -26,8 +26,8 @@ async function registerPlayer(playerData) {
 }
 
 // Log register function
-async function registerLog(logData, playerId) {
-	const ref = collection(db, collections.users, playerId.toString(), 'logs');
+export async function registerLog(logData: Log, playerId: string) {
+	const ref = collection(db, collections.users!, playerId.toString(), 'logs');
 	const convertedLog = {
 		...logData,
 		timestamp: serverTimestamp(),
@@ -42,25 +42,29 @@ async function registerLog(logData, playerId) {
 }
 
 // Load player function
-async function loadPlayer(playerId) {
-	const ref = doc(db, collections.users, playerId.toString());
+export async function loadPlayer(playerId: string): Promise<Player | undefined> {
+	const ref = doc(db, collections.users!, playerId);
 
 	try {
 		const querySnapshot = await getDoc(ref);
 
 		const data = querySnapshot.data();
 
-		return new Player(data.id, data.gold, data.gems, data.characters);
-	} catch (error) {
-		console.error(`Unable to load player: ${error}`);
+    if (data) {
+      return new Player(data.id, data.gold, data.gems, data.characters);
+    } else {
+      throw new Error('Player not found');
+    }
+	} catch (error: any) {
+		console.error(error.message);
 	}
 }
 
 // Update player function
-async function updatePlayer(playerData) {
-	const ref = doc(db, collections.users, playerData.id.toString());
+export async function updatePlayer(playerData: Player) {
+	const ref = doc(db, collections.users!, playerData.id);
 
-	const data = Object.assign({}, playerData);
+	const data: any = Object.assign({}, playerData);
 	delete data.id;
 
 	try {
@@ -72,8 +76,8 @@ async function updatePlayer(playerData) {
 	}
 }
 
-async function deletePlayer(playerId) {
-	const ref = doc(db, collections.users, playerId.toString());
+export async function deletePlayer(playerId: string) {
+	const ref = doc(db, collections.users!, playerId.toString());
 
 	try {
 		await deleteDoc(ref);
@@ -83,11 +87,3 @@ async function deletePlayer(playerId) {
 		console.error(`Failed to delete player ${playerId}: ${error}`);
 	}
 }
-
-module.exports = {
-	registerPlayer,
-	registerLog,
-	loadPlayer,
-	updatePlayer,
-	deletePlayer,
-};

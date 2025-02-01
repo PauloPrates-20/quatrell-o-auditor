@@ -1,15 +1,16 @@
 /* Imports */
 // Require node's native file systems modules
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 // Require the necessary discord.js classes
-const { Client, Events, Collection, GatewayIntentBits } = require('discord.js');
+import { Client, Events, Collection, GatewayIntentBits, UserResolvable, GuildMember } from 'discord.js';
 // Get the token
-const { token } = require('./config');
-const { loadPlayer } = require('./lib/firebase/firestoreQuerys');
+import { token } from './config';
+import { loadPlayer } from './lib/firebase/firestoreQuerys';
+import { CustomClient } from './lib/definitions';
 
 // Creates the client instace
-const client = new Client({
+const client: CustomClient = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
@@ -54,7 +55,7 @@ client.on(Events.InteractionCreate, async interaction => {
 		const command = client.commands.get(interaction.commandName);
 
 		if (command.data.name === 'personagem') {
-			const player = await loadPlayer(interaction.member.id);
+			const player = await loadPlayer((interaction.member as GuildMember).id);
 
 			// Respond with an empty array if player data is not found
 			if (!player) {
@@ -88,7 +89,7 @@ client.on(Events.InteractionCreate, async interaction => {
 			if (focusedOption.name === 'personagem') {
 				const options = interaction.options.data[0]?.options || [];
 				const jogadorOption = options.find(option => option.name === 'jogador');
-				const target = jogadorOption.value;
+				const target = jogadorOption!.value;
 				console.log('Target member: ', target);
 
 				if (!target) {
@@ -97,7 +98,7 @@ client.on(Events.InteractionCreate, async interaction => {
 					return;
 				}
 
-				const targetMember = await interaction.guild.members.fetch(target);
+				const targetMember = await interaction.guild!.members.fetch(target as UserResolvable);
 				const player = await loadPlayer(targetMember.id);
 
 				if (!player) {
@@ -124,7 +125,8 @@ client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isChatInputCommand()) return;
 
 	// Gets the command name
-	const command = interaction.client.commands.get(interaction.commandName);
+  const interactionClient = interaction.client as CustomClient;
+	const command = interactionClient.commands.get(interaction.commandName);
 
 	// Check if the command exists
 	if (!command) {

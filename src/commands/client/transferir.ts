@@ -1,9 +1,10 @@
 /* Imports */
-const { SlashCommandBuilder } = require('discord.js');
-const { loadPlayer, updatePlayer, registerLog } = require('../../lib/firebase/firestoreQuerys');
-const { Log } = require('../../lib/classes');
-const { goldLogBuilder, gemLogBuilder, transferencyLogBuilder } = require('../../lib/messages');
-const { channels } = require('../../config');
+import { BaseGuildTextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { Log } from '../../lib/classes';
+import { goldLogBuilder, gemLogBuilder, transferencyLogBuilder } from '../../lib/messages';
+import { channels } from '../../config';
+import { Gems } from '../../lib/definitions';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -34,19 +35,19 @@ module.exports = {
 				)
 				.addIntegerOption(option => option.setName('gemas').setDescription('Quantidade de gemas a transferir').setRequired(true)),
 		),
-	async execute(interaction) {
+	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
 
 		const gemTypes = { comum: 'Comum', transmutacao: 'Transmutação', ressureicao: 'Ressureição' };
-		const author = interaction.member.id;
-		const target = interaction.options.getMember('jogador').id;
+		const author = (interaction.member as GuildMember).id;
+		const target = (interaction.options.getMember('jogador') as GuildMember).id;
 
 		if (author === target) {
 			await interaction.editReply('Não é possível transferir para si mesmo.');
 			return;
 		}
 
-		const transferencyChannel = channels.transferencias;
+		const transferencyChannel = channels.transferencies!;
 		const [authorPlayer, targetPlayer] = await Promise.all([loadPlayer(author), loadPlayer(target)]);
 		const subcommand = interaction.options.getSubcommand();
 
@@ -60,8 +61,8 @@ module.exports = {
 		}
 
 		if (subcommand === 'ouro') {
-			const amount = interaction.options.getInteger('ouro');
-			const goldLogChannel = channels.banco;
+			const amount = interaction.options.getInteger('ouro')!;
+			const goldLogChannel = channels.bank!;
 
 			if (authorPlayer.gold < amount) {
 				await interaction.editReply('Ouro insuficiente.');
@@ -69,7 +70,7 @@ module.exports = {
 			}
 
 			const transferencyLog = new Log('transferencia', [author, target], transferencyChannel, transferencyLogBuilder('ouro', [author, target], amount));
-			const sourceMessage = await interaction.client.channels.cache.get(transferencyChannel).send(transferencyLog.content);
+			const sourceMessage = await (interaction.client.channels.cache.get(transferencyChannel) as BaseGuildTextChannel)!.send(transferencyLog.content);
 			const source = sourceMessage.url;
 
 			authorPlayer.subGold(amount);
@@ -78,8 +79,8 @@ module.exports = {
 			const authorLog = new Log('ouro', author, goldLogChannel, goldLogBuilder(authorPlayer, 'retira', amount, source));
 			const targetLog = new Log('ouro', target, goldLogChannel, goldLogBuilder(targetPlayer, 'deposita', amount, source));
 
-			interaction.client.channels.cache.get(goldLogChannel).send(authorLog.content);
-			interaction.client.channels.cache.get(goldLogChannel).send(targetLog.content);
+			(interaction.client.channels.cache.get(goldLogChannel) as BaseGuildTextChannel)!.send(authorLog.content);
+			(interaction.client.channels.cache.get(goldLogChannel) as BaseGuildTextChannel)!.send(targetLog.content);
 
 			try {
 				await Promise.all(
@@ -95,9 +96,9 @@ module.exports = {
 				await interaction.editReply(`Falha ao realizar transferência: ${error}`);
 			}
 		} else if (subcommand === 'gema') {
-			const gemType = interaction.options.getString('tipo');
-			const amount = interaction.options.getInteger('gemas');
-			const gemChannel = channels.gemas;
+			const gemType = interaction.options.getString('tipo') as keyof Gems;
+			const amount = interaction.options.getInteger('gemas')!;
+			const gemChannel = channels.treasure!;
 
 			if (authorPlayer.gems[gemType] < amount) {
 				await interaction.editReply('Gemas insuficientes');
@@ -105,7 +106,7 @@ module.exports = {
 			}
 
 			const transferencyLog = new Log('transferencia', [author, target], transferencyChannel, transferencyLogBuilder('gema', [author, target], amount, gemType));
-			const sourceMessage = await interaction.client.channels.cache.get(transferencyChannel).send(transferencyLog.content);
+			const sourceMessage = await (interaction.client.channels.cache.get(transferencyChannel) as BaseGuildTextChannel)!.send(transferencyLog.content);
 			const source = sourceMessage.url;
 
 			authorPlayer.subGems(gemType, amount);
@@ -114,15 +115,15 @@ module.exports = {
 			const authorLog = new Log('gema', author, gemChannel, gemLogBuilder(authorPlayer, gemType, amount, 'retira', source));
 			const targetLog = new Log('gema', target, gemChannel, gemLogBuilder(targetPlayer, gemType, amount, 'deposita', source));
 
-			interaction.client.channels.cache.get(gemChannel).send(authorLog.content);
-			interaction.client.channels.cache.get(gemChannel).send(targetLog.content);
+			(interaction.client.channels.cache.get(gemChannel) as BaseGuildTextChannel)!.send(authorLog.content);
+			(interaction.client.channels.cache.get(gemChannel) as BaseGuildTextChannel)!.send(targetLog.content);
 
 			try {
 				await Promise.all(
 					[
 						updatePlayer(authorPlayer),
 						registerLog(authorLog, author),
-						updatePlayer(targetPlayer, target),
+						updatePlayer(targetPlayer),
 						registerLog(targetLog, target),
 					],
 				);
