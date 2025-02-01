@@ -8,7 +8,7 @@
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsup src/main.ts --minify",
-    "register": "tsx deploy-commands.js"
+    "register": "tsx deploy-commands.ts"
   },
   "author": "",
   "license": "ISC",
