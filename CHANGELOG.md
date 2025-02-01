@@ -3,8 +3,8 @@
 ## [2.0.1] - 2025-02-01
 
 ### Fixed
-- Invalid token for the production environment.
-- Wrong channel ID indexing.
+- Resolved invalid token issue in the production environment.
+- Fixed incorrect channel ID indexing.
 
 ## [2.0.0] - 2025-02-01
 
@@ -12,13 +12,13 @@
 - Type definitions for Player properties.
 
 ### Changed
-- Folder structure to use src and dist directories.
-- Project language from JavaScript to TypeScript.
-- Refactores package scripts to support the new project structure.
-- Migrated from npm to pnpm.
+- Updated folder structure to include `src` and `dist` directories.
+- Migrated project language from JavaScript to TypeScript.
+- Refactored package scripts to support the new project structure.
+- Switched package manager from npm to pnpm.
 
 ### Removed
-- PM2 module as it was replaced by tsx for development.
+- Removed `PM2` module, replacing it with `tsx` for improved TypeScript development.
 
 ## [1.0.2] - 2025-02-01
 
