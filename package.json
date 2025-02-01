@@ -4,6 +4,7 @@
   "description": "Um bot simples para automatizar algumas tarefas do servidor de rpg Terra Sagrada",
   "main": "main.js",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "pm2 start main.js --watch & pm2 monit",
     "start": "node main.js",
     "build": "node deploy-commands.js",
@@ -17,6 +18,8 @@
     "firebase": "^10.12.4"
   },
   "devDependencies": {
-    "pm2": "^5.4.3"
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
   }
 }
