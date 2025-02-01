@@ -29,7 +29,7 @@ const commandFolders = fs.readdirSync(commandFoldersPath);
 for (const folder of commandFolders) {
 	// Grab the command files
 	const commandFilesPath = path.join(commandFoldersPath, folder);
-	const commandFiles = fs.readdirSync(commandFilesPath).filter(file => file.endsWith('.js'));
+	const commandFiles = fs.readdirSync(commandFilesPath).filter(file => file.endsWith('.ts'));
 
 	for (const file of commandFiles) {
 		const filePath = path.join(commandFilesPath, file);
