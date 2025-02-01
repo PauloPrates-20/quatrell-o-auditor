@@ -1,6 +1,6 @@
 {
   "name": "terrasagrada-utility-bot",
-  "version": "1.0.2",
+  "version": "2.0.1",
   "description": "Um bot simples para automatizar algumas tarefas do servidor de rpg Terra Sagrada",
   "main": "main.js",
   "scripts": {

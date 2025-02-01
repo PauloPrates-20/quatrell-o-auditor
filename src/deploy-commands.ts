@@ -15,7 +15,7 @@ const commandFolders = fs.readdirSync(commandFoldersPath);
 for (const folder of commandFolders) {
 	// Grab all the command files from the commands directory
 	const commandFilesPath = path.join(commandFoldersPath, folder);
-	const commandFiles = fs.readdirSync(commandFilesPath).filter((file: any) => file.endsWith('.ts'));
+	const commandFiles = fs.readdirSync(commandFilesPath).filter((file: any) => file.endsWith('.ts') || file.endsWith('.js'));
 
 	// Grab the SlachCommandBuilder#toJSON() output for each command's data for deployment
 	for (const file of commandFiles) {
