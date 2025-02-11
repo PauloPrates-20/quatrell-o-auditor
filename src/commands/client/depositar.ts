@@ -16,14 +16,14 @@ module.exports = {
       subcommand
         .setName('ouro')
         .setDescription('Deposita ouro para o jogador.')
-        .addIntegerOption(
-          option => option
+        .addIntegerOption(option =>
+          option
             .setName('ouro')
             .setDescription('Quantidade de ouro a depositar.')
             .setRequired(true)
         )
-        .addStringOption(
-          option => option
+        .addStringOption(option =>
+          option
             .setName('origem')
             .setDescription('URL apontando para a mensagem que justifica a origem do ouro.')
             .setRequired(true)
@@ -33,8 +33,8 @@ module.exports = {
       subcommand
         .setName('gema')
         .setDescription('Deposita gemas para o jogador.')
-        .addStringOption(
-          option => option
+        .addStringOption(option =>
+          option
             .setName('tipo')
             .setDescription('Tipo de gema a ser adicionada.')
             .addChoices(
@@ -44,14 +44,14 @@ module.exports = {
             )
             .setRequired(true),
         )
-        .addIntegerOption(
-          option => option
+        .addIntegerOption(option =>
+          option
             .setName('gemas')
             .setDescription('Quantidade de gemas a depositar.')
             .setRequired(true)
         )
-        .addStringOption(
-          option => option
+        .addStringOption(option =>
+          option
             .setName('origem')
             .setDescription('URL apontando para a mensagem que justifica a origem das gemas.')
             .setRequired(true)
