@@ -6,6 +6,7 @@ import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
 import { sourceValidation } from '../../lib/validation';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
+import { GemTypes } from '../../lib/tables';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -40,11 +41,11 @@ module.exports = {
 		await interaction.deferReply({ ephemeral: true });
 
 		let channel;
-		const gemType = { comum: 'Comum', ressureicao: 'da Ressureição', transmutacao: 'da Transmutação' };
 		const author = (interaction.member! as GuildMember).id;
 		const source = interaction.options.getString('origem')!;
 		const subcommand = interaction.options.getSubcommand();
 		const player = await loadPlayer(author);
+    const amount = (interaction.options.getInteger('ouro') ?? interaction.options.getInteger('gemas'))!
 
 
 		if (!sourceValidation(source)) {
@@ -59,44 +60,44 @@ module.exports = {
 
 		if (subcommand === 'ouro') {
 			channel = channels.bank!;
-			const gold = interaction.options.getInteger('ouro')!;
+      const clientChannel = interaction.client.channels.cache.get(channel) as BaseGuildTextChannel;
 
-			if (player.gold < gold) {
+			if (player.gold < amount) {
 				await interaction.editReply('Ouro insuficiente.');
 				return;
 			}
 
-			player.subGold(gold);
+			player.subGold(amount);
 
-			const goldLog = new Log('ouro', author.toString(), channel, goldLogBuilder(player, 'retira', gold, source));
+			const goldLog = new Log('ouro', author.toString(), channel, goldLogBuilder(player, 'retira', amount, source));
 
 			try {
 				await updatePlayer(player);
 				await registerLog(goldLog, author);
-				(interaction.client.channels.cache.get(channel) as BaseGuildTextChannel)!.send(goldLog.content);
-				await interaction.editReply(`${gold} PO retirados com sucesso.`);
+				clientChannel.send(goldLog.content);
+				await interaction.editReply(`${amount} PO retirados com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao retirar ouro: ${error}`);
 			}
 		} else if (subcommand === 'gema') {
 			channel = channels.treasure!;
 			const type = interaction.options.getString('tipo') as keyof Gems;
-			const gems = interaction.options.getInteger('gemas')!;
+      const clientChannel = interaction.client.channels.cache.get(channel) as BaseGuildTextChannel;
 
-			if (player.gems[type] < gems) {
+			if (player.gems[type] < amount) {
 				await interaction.editReply('Gemas insuficientes.');
 				return;
 			}
 
-			player.subGems(type, gems);
+			player.subGems(type, amount);
 
-			const gemLog = new Log('gema', author.toString(), channel, gemLogBuilder(player, type, gems, 'retira', source));
+			const gemLog = new Log('gema', author.toString(), channel, gemLogBuilder(player, type, amount, 'retira', source));
 
 			try {
 				await updatePlayer(player);
 				await registerLog(gemLog, author);
 				(interaction.client.channels.cache.get(channel) as BaseGuildTextChannel)!.send(gemLog.content);
-				await interaction.editReply(`${gems} Gema(s) ${gemType[type]} retirada(s) com sucesso.`);
+				await interaction.editReply(`${amount} Gema(s) ${GemTypes[type]} retirada(s) com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao retirar gemas: ${error}`);
 			}
