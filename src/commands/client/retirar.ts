@@ -96,7 +96,7 @@ module.exports = {
 			try {
 				await updatePlayer(player);
 				await registerLog(gemLog, author);
-				(interaction.client.channels.cache.get(channel) as BaseGuildTextChannel)!.send(gemLog.content);
+				clientChannel.send(gemLog.content);
 				await interaction.editReply(`${amount} Gema(s) ${GemTypes[type]} retirada(s) com sucesso.`);
 			} catch (error) {
 				await interaction.editReply(`Falha ao retirar gemas: ${error}`);
