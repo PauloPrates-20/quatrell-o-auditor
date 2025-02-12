@@ -1,5 +1,5 @@
 /* Imports */
-import { BaseGuildTextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { TextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
 import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
@@ -59,13 +59,11 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply({ ephemeral: true });
 
-    let channel;
-    const author = (interaction.member! as GuildMember).id;
+    const author = interaction.user.id;
     const source = interaction.options.getString('origem')!;
     const subcommand = interaction.options.getSubcommand();
     const player = await loadPlayer(author);
     const amount = (interaction.options.getInteger('ouro') ?? interaction.options.getInteger('gemas'))!
-
 
     if (!sourceValidation(source)) {
       await interaction.editReply('Origem inválida.');
@@ -78,8 +76,7 @@ module.exports = {
     }
 
     if (subcommand === 'ouro') {
-      channel = channels.bank!;
-      const clientChannel = interaction.client.channels.cache.get(channel) as BaseGuildTextChannel;
+      const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
 
       if (player.gold < amount) {
         await interaction.editReply('Ouro insuficiente.');
@@ -88,20 +85,19 @@ module.exports = {
 
       player.subGold(amount);
 
-      const goldLog = new Log('ouro', author.toString(), channel, goldLogBuilder(player, 'retira', amount, source));
+      const goldLog = new Log('ouro', author.toString(), bankChannel.id, goldLogBuilder(player, 'retira', amount, source));
 
       try {
         await updatePlayer(player);
         await registerLog(goldLog, author);
-        clientChannel.send(goldLog.content);
+        bankChannel.send(goldLog.content);
         await interaction.editReply(`${amount} PO retirados com sucesso.`);
       } catch (error) {
         await interaction.editReply(`Falha ao retirar ouro: ${error}`);
       }
     } else if (subcommand === 'gema') {
-      channel = channels.treasure!;
+      const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel
       const type = interaction.options.getString('tipo') as keyof Gems;
-      const clientChannel = interaction.client.channels.cache.get(channel) as BaseGuildTextChannel;
 
       if (player.gems[type] < amount) {
         await interaction.editReply('Gemas insuficientes.');
@@ -110,12 +106,12 @@ module.exports = {
 
       player.subGems(type, amount);
 
-      const gemLog = new Log('gema', author.toString(), channel, gemLogBuilder(player, type, amount, 'retira', source));
+      const gemLog = new Log('gema', author.toString(), treasureChannel.id, gemLogBuilder(player, type, amount, 'retira', source));
 
       try {
         await updatePlayer(player);
         await registerLog(gemLog, author);
-        clientChannel.send(gemLog.content);
+        treasureChannel.send(gemLog.content);
         await interaction.editReply(`${amount} Gema(s) ${GemTypes[type]} retirada(s) com sucesso.`);
       } catch (error) {
         await interaction.editReply(`Falha ao retirar gemas: ${error}`);
