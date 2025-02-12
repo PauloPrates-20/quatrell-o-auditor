@@ -71,7 +71,7 @@ module.exports = {
     }
 
     if (!player) {
-      await interaction.editReply('Jogador não encontrado. Utilize /registrar para se cadastrar.');
+      await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
       return;
     }
 
