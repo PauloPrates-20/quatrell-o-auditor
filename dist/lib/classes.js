@@ -22,7 +22,8 @@ var classes_exports = {};
 __export(classes_exports, {
   Character: () => Character,
   Log: () => Log,
-  Player: () => Player
+  Player: () => Player,
+  Sanitizer: () => Sanitizer
 });
 module.exports = __toCommonJS(classes_exports);
 
@@ -150,9 +151,17 @@ var Log = class {
     this.content = content;
   }
 };
+var Sanitizer = class {
+  static character(input) {
+    const name = input.trim().replace(/\s{2,}/g, " ");
+    const key = name.replace(/\s/g, "_").normalize("NFD").replace(/\W/g, "").toLowerCase();
+    return { name, key };
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   Character,
   Log,
-  Player
+  Player,
+  Sanitizer
 });

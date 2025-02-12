@@ -101,6 +101,12 @@ var tiersTable = [
   { level: 16, tier: "<:06_cobalto:1012215386164428930>" },
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
+var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
+  GemTypes2["comum"] = "Comum(ns)";
+  GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
+  GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
+  return GemTypes2;
+})(GemTypes || {});
 
 // src/lib/classes.ts
 var Player = class {
@@ -176,6 +182,13 @@ var Player = class {
     this.gems[type] -= amount;
   }
 };
+var Sanitizer = class {
+  static character(input) {
+    const name = input.trim().replace(/\s{2,}/g, " ");
+    const key = name.replace(/\s/g, "_").normalize("NFD").replace(/\W/g, "").toLowerCase();
+    return { name, key };
+  }
+};
 
 // src/lib/firebase/firestoreQuerys.ts
 var app = (0, import_app.initializeApp)(firebaseConfig);
@@ -209,31 +222,47 @@ async function updatePlayer(playerData) {
 // src/commands/admin/ajustar.ts
 module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("ajustar").setDescription("Ajusta os valores de ouro, gemas ou XP de um jogador.").setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers).addSubcommand(
-    (subcommand) => subcommand.setName("ouro").setDescription("Ajusta o valor de ouro do jogador.").addUserOption((option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)).addIntegerOption((option) => option.setName("ouro").setDescription("Quantidade de ouro do jogador ap\xF3s o ajuste.").setRequired(true))
+    (subcommand) => subcommand.setName("ouro").setDescription("Ajusta o valor de ouro do jogador.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)
+    ).addIntegerOption(
+      (option) => option.setName("ouro").setDescription("Quantidade de ouro do jogador ap\xF3s o ajuste.").setRequired(true)
+    )
   ).addSubcommand(
-    (subcommand) => subcommand.setName("gema").setDescription("Ajusta a quantidade de gemas do jogador.").addUserOption((option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)).addStringOption(
+    (subcommand) => subcommand.setName("gema").setDescription("Ajusta a quantidade de gemas do jogador.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)
+    ).addStringOption(
       (option) => option.setName("tipo").setDescription("Tipo de gema a ajustar.").addChoices(
         { name: "Comum", value: "comum" },
         { name: "Transmuta\xE7\xE3o", value: "transmutacao" },
         { name: "Ressurei\xE7\xE3o", value: "ressureicao" }
       ).setRequired(true)
-    ).addIntegerOption((option) => option.setName("gemas").setDescription("Quantidade de gemas do jogador ap\xF3s o ajuste.").setRequired(true))
+    ).addIntegerOption(
+      (option) => option.setName("gemas").setDescription("Quantidade de gemas do jogador ap\xF3s o ajuste.").setRequired(true)
+    )
   ).addSubcommand(
-    (subcommand) => subcommand.setName("xp").setDescription("Ajusta o valor de XP de um personagem do jogador.").addUserOption((option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)).addStringOption((option) => option.setName("personagem").setDescription("Nome do personagem a editar.").setRequired(true).setAutocomplete(true)).addIntegerOption((option) => option.setName("xp").setDescription("Quantidade de XP do personagem ap\xF3s o ajuste.").setRequired(true))
+    (subcommand) => subcommand.setName("xp").setDescription("Ajusta o valor de XP de um personagem do jogador.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)
+    ).addStringOption(
+      (option) => option.setName("personagem").setDescription("Nome do personagem a editar.").setRequired(true).setAutocomplete(true)
+    ).addIntegerOption(
+      (option) => option.setName("xp").setDescription("Quantidade de XP do personagem ap\xF3s o ajuste.").setRequired(true)
+    )
   ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
     const target = interaction.options.getUser("jogador").id;
-    const author = interaction.member.id;
+    const author = interaction.user.id;
     const subcommand = interaction.options.getSubcommand();
     const player = await loadPlayer(target);
+    const amount = interaction.options.getInteger("ouro") ?? interaction.options.getInteger("gemas") ?? interaction.options.getInteger("xp");
+    const bankChannel = interaction.client.channels.cache.get(channels.bank);
+    const treasureChannel = interaction.client.channels.cache.get(channels.treasure);
+    const xpChannel = interaction.client.channels.cache.get(channels.xp);
     if (!player) {
       await interaction.editReply("Jogador n\xE3o encontrado.");
       return;
     }
     if (subcommand === "ouro") {
-      const amount = interaction.options.getInteger("ouro");
-      const channel = interaction.client.channels.cache.get(channels.bank);
       if (amount < 0) {
         await interaction.editReply("Valor n\xE3o pode ser menor que 0.");
         return;
@@ -242,15 +271,12 @@ module.exports = {
       try {
         await updatePlayer(player);
         await interaction.editReply("Ajuste realizado com sucesso.");
-        channel.send(`Ouro de <@${target}> ajustado para ${amount} PO por <@${author}>.`);
+        bankChannel.send(`Ouro de <@${target}> ajustado para ${amount} PO por <@${author}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
       }
     } else if (subcommand === "gema") {
-      const gemTypes = { comum: "Comum", transmutacao: "da Transmuta\xE7\xE3o", ressureicao: "da Ressureicao" };
       const gemType = interaction.options.getString("tipo");
-      const amount = interaction.options.getInteger("gemas");
-      const channel = interaction.client.channels.cache.get(channels.treasure);
       if (amount < 0) {
         await interaction.editReply("Valor n\xE3o pode ser menor que 0.");
         return;
@@ -259,26 +285,17 @@ module.exports = {
       try {
         await updatePlayer(player);
         await interaction.editReply("Ajuste realizado com sucesso.");
-        channel.send(`Gemas ${gemTypes[gemType]} de <@${target}> ajustadas para ${amount} por <@${author}>.`);
+        treasureChannel.send(`Gemas ${GemTypes[gemType]} de <@${target}> ajustadas para ${amount} por <@${author}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
       }
     } else if (subcommand === "xp") {
-      const rawCharacterName = interaction.options.getString("personagem");
-      let characterName = rawCharacterName.trim();
-      if (/\d/.test(characterName.charAt(0))) {
+      const { name, key } = Sanitizer.character(interaction.options.getString("personagem"));
+      if (/\d/.test(name.charAt(0))) {
         await interaction.editReply("O nome do personagem n\xE3o pode come\xE7ar com n\xFAmeros.");
         return;
       }
-      if (/[^\w\s]/.test(characterName)) {
-        await interaction.editReply("O nome do personagem n\xE3o pode conter caracteres especiais.");
-        return;
-      }
-      characterName = characterName.replace(/\s+/g, " ");
-      const characterKey = characterName.toLowerCase().replace(" ", "_");
-      const amount = interaction.options.getInteger("xp");
-      const channel = interaction.client.channels.cache.get(channels.xp);
-      const character = player.characters[characterKey];
+      const character = player.characters[key];
       if (amount < 0) {
         await interaction.editReply("Valor n\xE3o pode ser menor que 0.");
         return;
@@ -287,11 +304,11 @@ module.exports = {
         await interaction.editReply("Personagem n\xE3o encontrado.");
         return;
       }
-      player.setXp(characterKey, amount);
+      player.setXp(key, amount);
       try {
         await updatePlayer(player);
         await interaction.editReply("Ajuste realizado com sucesso.");
-        channel.send(`XP do personagem ${character.name} de <@${target}> ajustado para ${amount} XP por <@${author}>.`);
+        xpChannel.send(`XP do personagem ${character.name} de <@${target}> ajustado para ${amount} XP por <@${author}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
       }

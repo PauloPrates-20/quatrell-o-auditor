@@ -202,13 +202,14 @@ async function loadPlayer(playerId) {
 module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("registrar").setDescription("Registra o jogador no banco de dados do servidor."),
   async execute(interaction) {
+    const author = interaction.user.id;
     await interaction.deferReply({ ephemeral: true });
-    let player = await loadPlayer(interaction.member.id);
+    let player = await loadPlayer(author);
     if (player) {
       await interaction.editReply("Jogador j\xE1 cadastrado!");
       return;
     }
-    player = new Player(interaction.member.id);
+    player = new Player(author);
     try {
       await registerPlayer(player);
       await interaction.editReply("Jogador cadastrado com sucesso!");

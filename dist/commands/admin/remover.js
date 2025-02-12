@@ -199,18 +199,20 @@ async function deletePlayer(playerId) {
 
 // src/commands/admin/remover.ts
 module.exports = {
-  data: new import_discord.SlashCommandBuilder().setName("remover").setDescription("Remove um jogador cadastrado do servidor").addUserOption((option) => option.setName("jogador").setDescription("O jogador a ser removido").setRequired(true)).setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers),
+  data: new import_discord.SlashCommandBuilder().setName("remover").setDescription("Remove um jogador cadastrado do servidor").addUserOption(
+    (option) => option.setName("jogador").setDescription("O jogador a ser removido").setRequired(true)
+  ).setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
-    const target = interaction.options.getMember("jogador");
-    const player = await loadPlayer(target.id);
+    const target = interaction.options.getUser("jogador").id;
+    const player = await loadPlayer(target);
     if (!player) {
       await interaction.editReply("Jogador n\xE3o encontrado.");
       return;
     }
     try {
-      deletePlayer(target.id);
-      await interaction.editReply(`Jogador <@${target.id}> deletado.`);
+      deletePlayer(target);
+      await interaction.editReply(`Jogador <@${target}> deletado.`);
     } catch (error) {
       await interaction.editReply(`Falha ao deletar jogador: ${error}`);
     }

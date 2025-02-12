@@ -101,6 +101,12 @@ var tiersTable = [
   { level: 16, tier: "<:06_cobalto:1012215386164428930>" },
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
+var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
+  GemTypes2["comum"] = "Comum(ns)";
+  GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
+  GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
+  return GemTypes2;
+})(GemTypes || {});
 
 // src/lib/classes.ts
 var Player = class {
@@ -257,56 +263,61 @@ function sourceValidation(source) {
 // src/commands/client/depositar.ts
 module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("depositar").setDescription("Deposita ouro ou gemas para o jogador.").addSubcommand(
-    (subcommnad) => subcommnad.setName("ouro").setDescription("Deposita ouro para o jogador.").addIntegerOption((option) => option.setName("ouro").setDescription("Quantidade de ouro a depositar.").setRequired(true)).addStringOption((option) => option.setName("origem").setDescription("URL apontando para a mensagem que justifica a origem do ouro.").setRequired(true))
+    (subcommand) => subcommand.setName("ouro").setDescription("Deposita ouro para o jogador.").addIntegerOption(
+      (option) => option.setName("ouro").setDescription("Quantidade de ouro a depositar.").setRequired(true)
+    ).addStringOption(
+      (option) => option.setName("origem").setDescription("URL apontando para a mensagem que justifica a origem do ouro.").setRequired(true)
+    )
   ).addSubcommand(
-    (subcommnad) => subcommnad.setName("gema").setDescription("Deposita gemas para o jogador.").addStringOption(
+    (subcommand) => subcommand.setName("gema").setDescription("Deposita gemas para o jogador.").addStringOption(
       (option) => option.setName("tipo").setDescription("Tipo de gema a ser adicionada.").addChoices(
         { name: "Comum", value: "comum" },
         { name: "Transmuta\xE7\xE3o", value: "transmutacao" },
         { name: "Ressurei\xE7\xE3o", value: "ressureicao" }
       ).setRequired(true)
-    ).addIntegerOption((option) => option.setName("gemas").setDescription("Quantidade de gemas a depositar.").setRequired(true)).addStringOption((option) => option.setName("origem").setDescription("URL apontando para a mensagem que justifica a origem das gemas.").setRequired(true))
+    ).addIntegerOption(
+      (option) => option.setName("gemas").setDescription("Quantidade de gemas a depositar.").setRequired(true)
+    ).addStringOption(
+      (option) => option.setName("origem").setDescription("URL apontando para a mensagem que justifica a origem das gemas.").setRequired(true)
+    )
   ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
-    let channel;
-    const gemType = { comum: "Comum", ressureicao: "da Ressurei\xE7\xE3o", transmutacao: "da Transmuta\xE7\xE3o" };
-    const author = interaction.member.id;
+    const author = interaction.user.id;
     const source = interaction.options.getString("origem");
     const subcommand = interaction.options.getSubcommand();
     const player = await loadPlayer(author);
+    const amount = interaction.options.getInteger("ouro") ?? interaction.options.getInteger("gemas");
     if (!sourceValidation(source)) {
       await interaction.editReply("Origem inv\xE1lida.");
       return;
     }
     if (!player) {
-      await interaction.editReply("Jogador n\xE3o encontrado. Utilize /registrar para se cadastrar.");
+      await interaction.editReply("Jogador n\xE3o encontrado. Utilize `/registrar` para se cadastrar.");
       return;
     }
     if (subcommand === "ouro") {
-      channel = channels.bank;
-      const gold = interaction.options.getInteger("ouro");
-      player.addGold(gold);
-      const goldLog = new Log("ouro", author, channel, goldLogBuilder(player, "deposita", gold, source));
+      const bankChannel = interaction.client.channels.cache.get(channels.bank);
+      player.addGold(amount);
+      const goldLog = new Log("ouro", author, bankChannel.id, goldLogBuilder(player, "deposita", amount, source));
       try {
         await updatePlayer(player);
         await registerLog(goldLog, author);
-        interaction.client.channels.cache.get(channel).send(goldLog.content);
-        await interaction.editReply(`${gold} PO adicionados com sucesso.`);
+        bankChannel.send(goldLog.content);
+        await interaction.editReply(`${amount} PO adicionados com sucesso.`);
       } catch (error) {
         await interaction.editReply(`Falha ao depositar ouro: ${error}`);
       }
     } else if (subcommand === "gema") {
-      channel = channels.treasure;
+      const treasureChannel = interaction.client.channels.cache.get(channels.treasure);
       const type = interaction.options.getString("tipo");
-      const gems = interaction.options.getInteger("gemas");
-      player.addGems(type, gems);
-      const gemLog = new Log("gema", author, channel, gemLogBuilder(player, type, gems, "deposita", source));
+      player.addGems(type, amount);
+      const gemLog = new Log("gema", author, treasureChannel.id, gemLogBuilder(player, type, amount, "deposita", source));
       try {
         await updatePlayer(player);
         await registerLog(gemLog, author);
-        interaction.client.channels.cache.get(channel).send(gemLog.content);
-        await interaction.editReply(`${gems} Gema(s) ${gemType[type]} adicionada(s) com sucesso.`);
+        treasureChannel.send(gemLog.content);
+        await interaction.editReply(`${amount} Gema(s) ${GemTypes[type]} adicionada(s) com sucesso.`);
       } catch (error) {
         await interaction.editReply(`Falha ao depositar gemas: ${error}`);
       }

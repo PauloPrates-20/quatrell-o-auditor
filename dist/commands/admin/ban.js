@@ -206,11 +206,16 @@ async function deletePlayer(playerId) {
 
 // src/commands/admin/ban.ts
 module.exports = {
-  data: new import_discord.SlashCommandBuilder().setName("ban").setDescription("Bane um jogador do servidor e apaga seus dados.").addUserOption((option) => option.setName("jogador").setDescription("Jogador a banir").setRequired(true)).addStringOption((option) => option.setName("motivo").setDescription("Motivo do banimento.")).setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers),
+  data: new import_discord.SlashCommandBuilder().setName("ban").setDescription("Bane um jogador do servidor e apaga seus dados.").addUserOption(
+    (option) => option.setName("jogador").setDescription("Jogador a banir").setRequired(true)
+  ).addStringOption(
+    (option) => option.setName("motivo").setDescription("Motivo do banimento.")
+  ).setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
+    const generalChannel = interaction.client.channels.cache.get(channels.general);
     const target = interaction.options.getUser("jogador").id;
-    const reason = interaction.options.getString("motivo") ? interaction.options.getString("motivo") : "Motivo n\xE3o especificado.";
+    const reason = interaction.options.getString("motivo") ?? "Motivo n\xE3o especificado.";
     if (target === interaction.user.id) {
       await interaction.editReply("N\xE3o \xE9 poss\xEDvel banir a si mesmo.");
       return;
@@ -227,6 +232,6 @@ module.exports = {
     }
     interaction.guild.members.ban(target, { reason });
     await interaction.editReply(`Usu\xE1rio <@${target}> banido. ${deleted ? "Dados do jogador deletados." : "Sem dados do jogador para deletar."}`);
-    interaction.client.channels.cache.get(channels.general).send(`Usu\xE1rio <@${target}> banido por: ${reason}`);
+    generalChannel.send(`Usu\xE1rio <@${target}> banido por: ${reason}`);
   }
 };
