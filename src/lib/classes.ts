@@ -124,3 +124,12 @@ export class Log {
 		this.content = content;
 	}
 }
+
+export class Sanitizer {
+  static character(input: string) {
+    const name = input.trim().replace(/\s{2,}/g, ' ');
+    const key = name.replace(/\s/g, '_').normalize('NFD').replace(/\W/g, '').toLowerCase();
+
+    return { name, key };
+  }
+}

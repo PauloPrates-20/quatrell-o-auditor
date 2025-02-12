@@ -1,200 +1,238 @@
 /* Imports */
-import { BaseGuildTextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder, TextChannel } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Character, Log } from '../../lib/classes';
+import { Character, Log, Sanitizer } from '../../lib/classes';
 import { sourceValidation } from '../../lib/validation';
 import { channels } from '../../config';
 import { xpLogBuilder } from '../../lib/messages';
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('personagem')
-		.setDescription('Conjunto de comandos relacionados aos personagens do jogador.')
-		.addSubcommand(subcommand =>
-			subcommand
-				.setName('adicionar')
-				.setDescription('Adiciona um novo personagem à lista de personagens do jogador.')
-				.addStringOption(option => option.setName('personagem').setDescription('Nome do personagem').setRequired(true)))
-		.addSubcommand(subcommand =>
-			subcommand
-				.setName('remover')
-				.setDescription('Remove o personagem escolhido da lista de personagens do jogador.')
-				.addStringOption(option => option.setName('personagem').setDescription('Nome do personagem').setRequired(true).setAutocomplete(true)))
-		.addSubcommand(subcommand =>
-			subcommand
-				.setName('renomear')
-				.setDescription('Renomeia um personagem, mantendo seus atributos.')
-				.addStringOption(option => option.setName('personagem').setDescription('Personagem a ser renomeado.').setRequired(true).setAutocomplete(true))
-				.addStringOption(option => option.setName('nome').setDescription('Novo nome.').setRequired(true)),
-		)
-		.addSubcommand(subcommand =>
-			subcommand
-				.setName('add-xp')
-				.setDescription('Adiciona XP ao personagem escolhido.')
-				.addIntegerOption(option => option.setName('xp').setDescription('Quantidade de XP a adicionar').setRequired(true))
-				.addStringOption(option => option.setName('personagem').setDescription('Nome do personagem').setRequired(true).setAutocomplete(true))
-				.addStringOption(option => option.setName('origem').setDescription('URL apontando para a mensagem que justifica o ganho de XP.').setRequired(true)))
-		.addSubcommand(subcommand =>
-			subcommand
-				.setName('sub-xp')
-				.setDescription('Subtrai xp do personagem selecionado.')
-				.addIntegerOption(option => option.setName('xp').setDescription('Quantidade de xp a subtrair').setRequired(true))
-				.addStringOption(option => option.setName('personagem').setDescription('Nome do personagem').setRequired(true).setAutocomplete(true))
-				.addStringOption(option => option.setName('origem').setDescription('URL apontando para a mensagem que justifica a retirada de XP.').setRequired(true))),
-	async execute(interaction: ChatInputCommandInteraction) {
-		await interaction.deferReply({ ephemeral: true });
+  data: new SlashCommandBuilder()
+    .setName('personagem')
+    .setDescription('Conjunto de comandos relacionados aos personagens do jogador.')
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('adicionar')
+        .setDescription('Adiciona um novo personagem à lista de personagens do jogador.')
+        .addStringOption(option =>
+          option
+            .setName('personagem')
+            .setDescription('Nome do personagem')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('remover')
+        .setDescription('Remove o personagem escolhido da lista de personagens do jogador.')
+        .addStringOption(option =>
+          option
+            .setName('personagem')
+            .setDescription('Nome do personagem')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('renomear')
+        .setDescription('Renomeia um personagem, mantendo seus atributos.')
+        .addStringOption(option =>
+          option
+            .setName('personagem')
+            .setDescription('Personagem a ser renomeado.')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('nome')
+            .setDescription('Novo nome.')
+            .setRequired(true)
+        ),
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('add-xp')
+        .setDescription('Adiciona XP ao personagem escolhido.')
+        .addIntegerOption(option =>
+          option
+            .setName('xp')
+            .setDescription('Quantidade de XP a adicionar')
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('personagem')
+            .setDescription('Nome do personagem')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('origem')
+            .setDescription('URL apontando para a mensagem que justifica o ganho de XP.')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('sub-xp')
+        .setDescription('Subtrai xp do personagem selecionado.')
+        .addIntegerOption(option =>
+          option
+            .setName('xp')
+            .setDescription('Quantidade de xp a subtrair')
+            .setRequired(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('personagem')
+            .setDescription('Nome do personagem')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('origem')
+            .setDescription('URL apontando para a mensagem que justifica a retirada de XP.')
+            .setRequired(true)
+        )
+    ),
+  async execute(interaction: ChatInputCommandInteraction) {
+    await interaction.deferReply({ ephemeral: true });
 
-		const player = await loadPlayer((interaction.member as GuildMember).id);
+    const author = interaction.user.id;
+    const player = await loadPlayer(author);
+    const subcommand = interaction.options.getSubcommand();
+    const { name, key } = Sanitizer.character(interaction.options.getString('personagem')!);
+    const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
 
-		if (!player) {
-			await interaction.editReply('Jogador não cadastrado. Utilize /registrar para se cadastrar.');
-			return;
-		}
+    if (!player) {
+      await interaction.editReply('Jogador não cadastrado. Utilize `/registrar` para se cadastrar.');
+      return;
+    }
+    if (/\d/.test(name.charAt(0))) {
+      await interaction.editReply('O nome do personagem não pode começar com números.');
+      return;
+    }
+    
+    if (subcommand === 'adicionar') {
+      const character = new Character(name);
 
-		const subcommand = interaction.options.getSubcommand();
-		const rawCharacterName = interaction.options.getString('personagem')!;
-		let characterName = rawCharacterName.trim();
+      if (player.characters[key]) {
+        await interaction.editReply('Já existe um personagem com este nome.');
+        return;
+      }
+      player.registerCharacter(character, key);
 
-		if (/\d/.test(characterName.charAt(0))) {
-			await interaction.editReply('O nome do personagem não pode começar com números.');
-			return;
-		}
+      try {
+        await updatePlayer(player);
+        await interaction.editReply(`Personagem ${name} adicionado com sucesso.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao adicionar personagem: ${error}`);
+      }
+    } else if (subcommand === 'remover') {
+      if (!player.characters[key]) {
+        await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
+        return;
+      }
+      player.deleteCharacter(key);
 
-		if (/[^\w\s]/.test(characterName)) {
-			await interaction.editReply('O nome do personagem não pode conter caracteres especiais.');
-			return;
-		}
+      try {
+        await updatePlayer(player);
+        await interaction.editReply(`Personagem ${name} removido com sucesso.`);
+        xpChannel.send(`Personagem ${name} de <@${(interaction.member as GuildMember).id}> deletado.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao deletar personagem: ${error}`);
+      }
+    } else if (subcommand === 'renomear') {
+      const {name: newName, key: newKey } = Sanitizer.character(interaction.options.getString('nome')!);
 
-		characterName = characterName.replace(/\s+/g, ' ');
-		const characterKey = characterName.toLowerCase().replace(' ', '_');
+      if (/\d/.test(newName.charAt(0))) {
+        await interaction.editReply('O nome do personagem não pode começar com números.');
+        return;
+      }
 
-		if (subcommand === 'adicionar') {
-			const character = new Character(characterName);
+      if (!player.characters[key]) {
+        await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
+        return;
+      }
 
-			if (player.characters[characterKey]) {
-				await interaction.editReply('Já existe um personagem com este nome.');
-				return;
-			}
+      if (player.characters[newKey]) {
+        await interaction.editReply('Já existe um personagem com este nome.');
+        return;
+      }
 
-			player.registerCharacter(character, characterKey);
+      const oldName = player.characters[key].name;
+      player.renameCharacter(key, newKey, newName);
 
-			try {
-				await updatePlayer(player);
-				await interaction.editReply(`Personagem ${characterName} adicionado com sucesso.`);
-			} catch (error) {
-				await interaction.editReply(`Falha ao adicionar personagem: ${error}`);
-			}
-		} else if (subcommand === 'remover') {
-			if (!player.characters[characterKey]) {
-				await interaction.editReply('Personagem não encontrado. Verifique o nome do personagem na lista.');
-				return;
-			}
+      try {
+        await updatePlayer(player);
+        await interaction.editReply(`Personagem ${oldName} renomeado para ${newName}.`);
+        xpChannel.send(`Personagem ${oldName} de <@${author}> renomeado para ${newName}.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao renomear personagem: ${error}`);
+      }
+    } else if (subcommand === 'add-xp') {
+      const source = interaction.options.getString('origem')!;
 
-			player.deleteCharacter(characterKey);
+      if (!sourceValidation(source)) {
+        interaction.editReply('Origem inválida.');
+        return;
+      }
 
-			try {
-				await updatePlayer(player);
-				await interaction.editReply(`Personagem ${characterName} removido com sucesso.`);
-				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(`Personagem ${characterName} de <@${(interaction.member as GuildMember).id}> deletado.`);
-			} catch (error) {
-				await interaction.editReply(`Falha ao deletar personagem: ${error}`);
-			}
-		} else if (subcommand === 'renomear') {
-			const rawNewName = interaction.options.getString('nome')!;
-			let newName = rawNewName.trim();
+      if (!player.characters[key]) {
+        await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
+        return;
+      }
 
-			if (/\d/.test(newName.charAt(0))) {
-				await interaction.editReply('O nome do personagem não pode começar com números.');
-				return;
-			}
+      const addedXp = interaction.options.getInteger('xp')!;
 
-			if (/[^\w\s]/.test(newName)) {
-				await interaction.editReply('O nome do personagem não pode conter caracteres especiais.');
-				return;
-			}
+      player.addXp(key, addedXp);
 
-			newName = newName.replace(/\s+/g, ' ');
-			const newKey = newName.toLowerCase().replace(' ', '_');
+      try {
+        const log = new Log('xp', author, xpChannel.id, xpLogBuilder(player, key, addedXp, source));
 
-			if (!player.characters[characterKey]) {
-				await interaction.editReply('Personagem não encontrado. Verifique a lista de personagens');
-				return;
-			}
-			if (player.characters[newKey]) {
-				await interaction.editReply('Já existe um personagem com este nome.');
-				return;
-			}
+        await updatePlayer(player);
+        await registerLog(log, author);
+        xpChannel.send(log.content);
+        await interaction.editReply(`${addedXp} XP adicionados ao personagem ${name} com sucesso.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao adicionar XP ao personagem: ${error}`);
+      }
+    } else if (subcommand === 'sub-xp') {
+      const source = interaction.options.getString('origem')!;
+      const removedXp = interaction.options.getInteger('xp')!;
 
-			const oldName = player.characters[characterKey].name;
+      if (!sourceValidation(source)) {
+        interaction.editReply('Origem inválida.');
+        return;
+      }
 
-			player.renameCharacter(characterKey, newKey, newName);
+      if (!player.characters[key]) {
+        await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
+        return;
+      }
 
-			try {
-				await updatePlayer(player);
-				await interaction.editReply(`Personagem ${oldName} renomeado para ${newName}.`);
-				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(`Personagem ${oldName} de <@${(interaction.member as GuildMember).id}> renomeado para ${newName}.`);
-			} catch (error) {
-				await interaction.editReply(`Falha ao renomear personagem: ${error}`);
-			}
-		} else if (subcommand === 'add-xp') {
-			const source = interaction.options.getString('origem')!;
-
-			if (!sourceValidation(source)) {
-				interaction.editReply('Origem inválida.');
-				return;
-			}
-
-			if (!player.characters[characterKey]) {
-				await interaction.editReply('Personagem não encontrado. Verifique o nome do personagem na lista.');
-				return;
-			}
-
-			const addedXp = interaction.options.getInteger('xp')!;
-
-			player.addXp(characterKey, addedXp);
-
-			try {
-				const log = new Log('xp', (interaction.member as GuildMember).id, channels.xp!, xpLogBuilder(player, characterKey, addedXp, source));
-
-				await updatePlayer(player);
-				await registerLog(log, (interaction.member as GuildMember).id);
-				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(log.content);
-				await interaction.editReply(`${addedXp} XP adicionados ao personagem ${characterName} com sucesso.`);
-			} catch (error) {
-				await interaction.editReply(`Falha ao adicionar XP ao personagem: ${error}`);
-			}
-		} else if (subcommand === 'sub-xp') {
-			const source = interaction.options.getString('origem')!;
-			const removedXp = interaction.options.getInteger('xp')!;
-
-			if (!sourceValidation(source)) {
-				interaction.editReply('Origem inválida.');
-				return;
-			}
-
-			if (!player.characters[characterKey]) {
-				await interaction.editReply('Personagem não encontrado. Verifique o nome do personagem na lista.');
-				return;
-			}
-
-			if (player.characters[characterKey].xp < removedXp) {
-				await interaction.editReply('XP do personagem não pode ficar abaixo de 0');
-				return;
-			}
+      if (player.characters[key].xp < removedXp) {
+        await interaction.editReply('XP do personagem não pode ficar abaixo de 0');
+        return;
+      }
 
 
-			player.subXp(characterKey, removedXp);
+      player.subXp(key, removedXp);
 
-			try {
-				const log = new Log('xp', (interaction.member as GuildMember).id, channels.xp!, xpLogBuilder(player, characterKey, -removedXp, source));
+      try {
+        const log = new Log('xp', author, xpChannel.id, xpLogBuilder(player, key, -removedXp, source));
 
-				await updatePlayer(player);
-				await registerLog(log, (interaction.member as GuildMember).id);
-				(interaction.client.channels.cache.get(channels.xp!) as BaseGuildTextChannel).send(log.content);
-				await interaction.editReply(`${removedXp} XP subtraídos do personagem ${characterName} com sucesso.`);
-			} catch (error) {
-				await interaction.editReply(`Falha ao subtrair XP do personagem: ${error}`);
-			}
-		}
-	},
+        await updatePlayer(player);
+        await registerLog(log, author);
+        xpChannel.send(log.content);
+        await interaction.editReply(`${removedXp} XP subtraídos do personagem ${name} com sucesso.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao subtrair XP do personagem: ${error}`);
+      }
+    }
+  },
 };

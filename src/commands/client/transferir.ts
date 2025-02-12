@@ -73,7 +73,7 @@ module.exports = {
     const subcommand = interaction.options.getSubcommand();
 
     if (!authorPlayer) {
-      await interaction.editReply('Jogador não encontrado. Utilize /registrar para se cadastrar.');
+      await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
       return;
     }
     if (!targetPlayer) {

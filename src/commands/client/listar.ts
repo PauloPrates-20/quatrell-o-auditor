@@ -13,14 +13,14 @@ module.exports = {
 		const player = await loadPlayer(author);
 
 		if (!player) {
-			await interaction.editReply('Jogador não cadastrado. Utilize o comando /registrar para se cadastrar.');
+			await interaction.editReply('Jogador não cadastrado. Utilize o comando `/registrar` para se cadastrar.');
 			return;
 		}
 
 		const characters = player.characters;
 
 		if (Object.keys(characters).length === 0) {
-			await interaction.editReply('Nenhum personagem cadastrado. Utilize o comando /personagem para começar a cadastrar seus personagens.');
+			await interaction.editReply('Nenhum personagem cadastrado. Utilize o comando `/personagem` para começar a cadastrar seus personagens.');
 			return;
 		}
 
