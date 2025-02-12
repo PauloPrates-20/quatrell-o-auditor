@@ -1,5 +1,5 @@
 /* Imports */
-import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, registerPlayer } from '../../lib/firebase/firestoreQuerys';
 import { Player } from '../../lib/classes';
 
@@ -8,15 +8,16 @@ module.exports = {
 		.setName('registrar')
 		.setDescription('Registra o jogador no banco de dados do servidor.'),
 	async execute(interaction: ChatInputCommandInteraction) {
+    const author = interaction.user.id;
 		await interaction.deferReply({ ephemeral: true });
-		let player = await loadPlayer((interaction.member as GuildMember).id);
+		let player = await loadPlayer(author);
 
 		if (player) {
 			await interaction.editReply('Jogador já cadastrado!');
 			return;
 		}
 
-		player = new Player((interaction.member as GuildMember).id);
+		player = new Player(author);
 
 		try {
 			await registerPlayer(player);
