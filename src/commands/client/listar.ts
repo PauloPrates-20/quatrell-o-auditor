@@ -8,7 +8,9 @@ module.exports = {
 		.setDescription('Exibe uma lista de seus personagens cadastrados.'),
 	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
-		const player = await loadPlayer((interaction.member as GuildMember).id);
+    
+    const author = interaction.user.id;
+		const player = await loadPlayer(author);
 
 		if (!player) {
 			await interaction.editReply('Jogador não cadastrado. Utilize o comando /registrar para se cadastrar.');
