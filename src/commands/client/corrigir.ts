@@ -2,6 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from "d
 import { channels } from '../../config';
 import { loadPlayer } from "../../lib/firebase/firestoreQuerys";
 import { sourceValidation } from "../../lib/validation";
+import { Sanitizer } from "../../lib/classes";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -88,6 +89,8 @@ module.exports = {
     const player = loadPlayer(author);
     const source = interaction.options.getString('origem')!;
     const messageUrl = interaction.options.getString('mensagem')!
+    const clientGuild = interaction.guild!.id;
+    const [guildId, channelId, messageId] = Sanitizer.urlComponents(messageUrl);
     const subcommand = interaction.options.getSubcommand();
 
     if (!sourceValidation(source)) {
@@ -107,6 +110,7 @@ module.exports = {
 
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
+
     }
 
     if (subcommand === 'gema') {

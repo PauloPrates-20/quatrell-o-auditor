@@ -132,4 +132,16 @@ export class Sanitizer {
 
     return { name, key };
   }
+
+  static urlComponents(url: string): string[] | null[] {
+    const components = url.match(/\d{18,}/g);
+
+    if (!components || components.length !== 3) {
+      return [null, null, null];
+    }
+
+    const [guildId, channelId, messageId] = components;
+
+    return [guildId, channelId, messageId];
+  }
 }
