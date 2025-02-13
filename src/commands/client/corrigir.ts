@@ -80,8 +80,6 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
 
     const author = interaction.user.id;
-    const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
-    const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
     const amount = (
       interaction.options.getInteger('ouro') ??
       interaction.options.getInteger('gemas') ??
@@ -112,11 +110,12 @@ module.exports = {
     }
 
     if (subcommand === 'gema') {
+      const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
 
     }
 
     if (subcommand === 'xp') {
-
+      const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
     }
   },
 }
