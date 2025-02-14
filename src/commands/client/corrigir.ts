@@ -92,6 +92,7 @@ module.exports = {
     const clientGuild = interaction.guild!.id;
     const [guildId, channelId, messageId] = Sanitizer.urlComponents(messageUrl);
     const subcommand = interaction.options.getSubcommand();
+    const baseURl = `https://discord.com/${clientGuild}`;
 
     if (!sourceValidation(source)) {
       await interaction.editReply('Origem inválida.');
@@ -103,6 +104,11 @@ module.exports = {
       return;
     }
 
+    if (guildId !== clientGuild) {
+      await interaction.editReply('Mensagem inválida: selecione uma mensagem neste servidor.');
+      return;
+    }
+
     if (!player) {
       await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
       return;
@@ -111,6 +117,16 @@ module.exports = {
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
 
+      if (channelId !== bankChannel.id) {
+        await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${bankChannel.id}`);
+      }
+
+      const message = await bankChannel.messages.fetch(messageId!);
+
+      if (!message) {
+        await interaction.editReply('Mensagem não encontrada.');
+        return;
+      }
     }
 
     if (subcommand === 'gema') {
