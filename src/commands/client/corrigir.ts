@@ -1,5 +1,7 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from 'discord.js'
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel, Message } from 'discord.js'
 import { channels } from '../../config';
+import { sourceValidation } from '../../lib/validation';
+import { Sanitizer } from '../../lib/classes';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -105,18 +107,48 @@ module.exports = {
       const clientGuild = interaction.guild!.id;
       const subcommand = interaction.options.getSubcommand();
       const messageUrl = interaction.options.getString('mensagem', true);
+      const baseUrl = `https://discord.com/channels/${clientGuild}`;
 
+      if (!sourceValidation(messageUrl)) {
+        await interaction.editReply('Mensagem inválida.');
+        return;
+      }
+
+      const [messageGuild, messageChannel, messageId] = Sanitizer.urlComponents(messageUrl);
+
+      if (messageGuild !== clientGuild) {
+        await interaction.editReply('Mensagem inválida. Selecione uma mensagem neste servidor.');
+        return;
+      }
+
+      let channel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
       // subcommand handling
       if (subcommand === 'ouro') {
-        const channel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
       }
 
       if (subcommand === 'gema') {
-        const channel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
+        channel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
       }
 
       if (subcommand === 'xp') {
-        const channel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
+        channel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
+      }
+
+      if (messageChannel !== channel.id) {
+        await interaction.editReply(`Mensagem inválida. Selecione uma mensagem em ${baseUrl}/${channel.id}`);
+        return;
+      }
+
+      const message = await channel.messages.fetch(messageId!);
+      
+      if (!message) {
+        await interaction.editReply('Mensagem não encontrada.')
+        return;
+      }
+
+      if (!message.mentions.has(author)) {
+        await interaction.editReply('Só é possível corrigir os próprios lançamentos.');
+        return;
       }
     }
 }
