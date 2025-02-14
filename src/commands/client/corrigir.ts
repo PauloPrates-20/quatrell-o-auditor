@@ -1,8 +1,26 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel, Message } from "discord.js";
 import { channels } from '../../config';
 import { loadPlayer } from "../../lib/firebase/firestoreQuerys";
 import { sourceValidation } from "../../lib/validation";
 import { Sanitizer } from "../../lib/classes";
+
+async function fetchMessage(
+  interaction: ChatInputCommandInteraction,
+  channelId: string,
+  messageId: string,
+  channel: TextChannel,
+  baseUrl: string
+): Promise<Message<true> | null> {
+  // checks if the message channel is correct
+  if (channelId !== channel.id) {
+    await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseUrl}/${channel.id}`);
+    return null;
+  }
+
+  // fetch the message and checks if it was found
+  const message = await channel.messages.fetch(messageId!);
+  return message;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -92,7 +110,7 @@ module.exports = {
     const clientGuild = interaction.guild!.id;
     const [guildId, channelId, messageId] = Sanitizer.urlComponents(messageUrl);
     const subcommand = interaction.options.getSubcommand();
-    const baseURl = `https://discord.com/${clientGuild}`;
+    const baseUrl = `https://discord.com/${clientGuild}`;
 
     if (!sourceValidation(source)) {
       await interaction.editReply('Origem inválida.');
@@ -117,14 +135,7 @@ module.exports = {
     // Subcommand handling
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-
-      // checks if the message channel is correct
-      if (channelId !== bankChannel.id) {
-        await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${bankChannel.id}`);
-      }
-
-      // fetch the message and checks if it was found
-      const message = await bankChannel.messages.fetch(messageId!);
+      const message = await fetchMessage(interaction, channelId!, messageId!, bankChannel, baseUrl);
 
       if (!message) {
         await interaction.editReply('Mensagem não encontrada.');
@@ -134,14 +145,7 @@ module.exports = {
 
     if (subcommand === 'gema') {
       const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
-
-      // checks if the message channel is correct
-      if (channelId !== treasureChannel.id) {
-        await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${treasureChannel.id}`);
-      }
-
-      // fetch the message and checks if it was found
-      const message = await treasureChannel.messages.fetch(messageId!);
+      const message = await fetchMessage(interaction, channelId!, messageId!, treasureChannel, baseUrl);
 
       if (!message) {
         await interaction.editReply('Mensagem não encontrada.');
@@ -151,14 +155,7 @@ module.exports = {
 
     if (subcommand === 'xp') {
       const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
-
-      // checks if the message channel is correct
-      if (channelId !== xpChannel.id) {
-        await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${xpChannel.id}`);
-      }
-
-      // fetch the message and checks if it was found
-      const message = await xpChannel.messages.fetch(messageId!);
+      const message = await fetchMessage(interaction, channelId!, messageId!, xpChannel, baseUrl);
 
       if (!message) {
         await interaction.editReply('Mensagem não encontrada.');
