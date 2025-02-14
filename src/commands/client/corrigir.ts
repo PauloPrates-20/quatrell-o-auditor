@@ -1,4 +1,5 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js'
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from 'discord.js'
+import { channels } from '../../config';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -99,5 +100,23 @@ module.exports = {
     ),
     async execute(interaction: ChatInputCommandInteraction) {
       await interaction.deferReply({ ephemeral: true });
+
+      const author = interaction.user.id;
+      const clientGuild = interaction.guild!.id;
+      const subcommand = interaction.options.getSubcommand();
+      const messageUrl = interaction.options.getString('mensagem', true);
+
+      // subcommand handling
+      if (subcommand === 'ouro') {
+        const channel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
+      }
+
+      if (subcommand === 'gema') {
+        const channel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
+      }
+
+      if (subcommand === 'xp') {
+        const channel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
+      }
     }
 }
