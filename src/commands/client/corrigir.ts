@@ -17,7 +17,6 @@ async function fetchMessage(
     return null;
   }
 
-  // fetch the message and checks if it was found
   const message = await channel.messages.fetch(messageId!);
   return message;
 }
@@ -141,6 +140,12 @@ module.exports = {
         await interaction.editReply('Mensagem não encontrada.');
         return;
       }
+
+      try {
+
+      } catch (error) {
+
+      }
     }
 
     if (subcommand === 'gema') {
@@ -151,6 +156,12 @@ module.exports = {
         await interaction.editReply('Mensagem não encontrada.');
         return;
       }
+
+      try {
+
+      } catch (error) {
+
+      }
     }
 
     if (subcommand === 'xp') {
@@ -160,6 +171,12 @@ module.exports = {
       if (!message) {
         await interaction.editReply('Mensagem não encontrada.');
         return;
+      }
+
+      try {
+
+      } catch (error) {
+
       }
     }
   },
