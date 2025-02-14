@@ -114,13 +114,16 @@ module.exports = {
       return;
     }
 
+    // Subcommand handling
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
 
+      // checks if the message channel is correct
       if (channelId !== bankChannel.id) {
         await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${bankChannel.id}`);
       }
 
+      // fetch the message and checks if it was found
       const message = await bankChannel.messages.fetch(messageId!);
 
       if (!message) {
@@ -132,10 +135,35 @@ module.exports = {
     if (subcommand === 'gema') {
       const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
 
+      // checks if the message channel is correct
+      if (channelId !== treasureChannel.id) {
+        await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${treasureChannel.id}`);
+      }
+
+      // fetch the message and checks if it was found
+      const message = await treasureChannel.messages.fetch(messageId!);
+
+      if (!message) {
+        await interaction.editReply('Mensagem não encontrada.');
+        return;
+      }
     }
 
     if (subcommand === 'xp') {
       const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
+
+      // checks if the message channel is correct
+      if (channelId !== xpChannel.id) {
+        await interaction.editReply(`Mensagem inválida: selecione uma mensagem do canal ${baseURl}/${xpChannel.id}`);
+      }
+
+      // fetch the message and checks if it was found
+      const message = await xpChannel.messages.fetch(messageId!);
+
+      if (!message) {
+        await interaction.editReply('Mensagem não encontrada.');
+        return;
+      }
     }
   },
 }
