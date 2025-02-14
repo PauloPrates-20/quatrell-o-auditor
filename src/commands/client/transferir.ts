@@ -1,5 +1,5 @@
 /* Imports */
-import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { TextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
 import { goldLogBuilder, gemLogBuilder, transferencyLogBuilder } from '../../lib/messages';
