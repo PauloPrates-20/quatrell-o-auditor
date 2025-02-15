@@ -35,7 +35,7 @@ export const tiersTable = [
 ];
 
 export enum GemTypes {
-  comum = 'Comum(ns)',
+  comum = 'Comum',
   transmutacao = 'da Transmutação',
   ressureicao = 'da Ressureição'
 }

@@ -18,3 +18,5 @@ export interface CharacterDef {
     tier: string;
   };
 };
+
+export type Actions = 'deposita' | 'retira';

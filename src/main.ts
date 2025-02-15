@@ -54,7 +54,7 @@ client.on(Events.InteractionCreate, async interaction => {
 	if (interaction.isAutocomplete()) {
 		const command = client.commands.get(interaction.commandName);
 
-		if (command.data.name === 'personagem') {
+		if (command.data.name === 'personagem' || (command.data.name === 'corrigir' && interaction.options.getSubcommand() === 'xp')) {
 			const player = await loadPlayer((interaction.member as GuildMember).id);
 
 			// Respond with an empty array if player data is not found

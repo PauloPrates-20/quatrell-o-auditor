@@ -112,10 +112,10 @@ export class Character {
 }
 
 export class Log {
-  type: string;
-  targets: string[] | string;
-  channels: string[] | string;
-  content: string;
+  type;
+  targets;
+  channels
+  content;
 
 	constructor(type: string, targets: string[] | string, channels: string[] | string, content: string) {
 		this.type = type;
@@ -138,5 +138,9 @@ export class Sanitizer {
     const [guildId, channelId, messageId] = components!;
 
     return [guildId, channelId, messageId];
+  }
+
+  static gemType(input: string) {
+    return input.normalize('NFD').replace(/\W/g, '').toLowerCase();
   }
 }

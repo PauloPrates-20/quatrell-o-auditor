@@ -1,8 +1,8 @@
 import { Player } from './classes';
-import { Gems } from './definitions';
+import { Gems, Actions } from './definitions';
 
 // Builds the messages used for the logs in the channel #banco
-export function goldLogBuilder(player: Player, action: 'retira' | 'deposita', amount: number, source: string) {
+export function goldLogBuilder(player: Player, action: Actions, amount: number, source: string) {
 	const actionText = { retira: 'Retira', deposita: 'Deposita' };
 	const message = `Jogador: <@${player.id}>\n${actionText[action]}: ${amount} PO\nOuro Total: ${player.gold} PO\nOrigem: ${source}`;
 
@@ -18,7 +18,7 @@ export function xpLogBuilder(player: Player, characterKey: string, amount: numbe
 }
 
 // Builds the messages used for the logs in the channel #tesouros-e-gemas
-export function gemLogBuilder(player: Player, type: keyof Gems, amount: number, action: 'deposita' | 'retira', source: string) {
+export function gemLogBuilder(player: Player, type: keyof Gems, amount: number, action: Actions, source: string) {
 	const types = { comum: 'Comum', transmutacao: 'da Transmutação', ressureicao: 'da Ressureição' };
 	const actions = { retira: 'Retira', deposita: 'Deposita' };
 	const actionType = actions[action];
