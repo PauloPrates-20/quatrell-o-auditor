@@ -19,10 +19,20 @@ async function fetchMessage(
   return await channel.messages.fetch(messageId);
 }
 
-async function applyCorrection(player: Player, author: string, log: Log, channel: TextChannel, messageUrl: string) {
+async function applyCorrection(
+  player: Player,
+  author: string,
+  log: Log,
+  channel: TextChannel,
+  messageUrl: string,
+  message: Message,
+  interaction: ChatInputCommandInteraction
+) {
   await updatePlayer(player);
   await registerLog(log, author);
   await channel.send(`Correção do lançamento ${messageUrl}\n\n` + log.content);
+  await message.react('❌');
+  await interaction.editReply('Lançamento corrigido com sucesso.');
 }
 
 module.exports = {
@@ -242,9 +252,7 @@ module.exports = {
       const log = new Log('ouro', author, channel.id, goldLogBuilder(player, action as 'deposita' | 'retira', amount, source));
 
       try {
-        await applyCorrection(player, author, log, channel, messageUrl);
-        await message.react('❌');
-        await interaction.editReply('Lançamento corrigido com sucesso.');
+        await applyCorrection(player, author, log, channel, messageUrl, message, interaction);
       } catch (error: any) {
         await interaction.editReply(`Falha ao corrigir lançamento: ${error.message}`);
       }
