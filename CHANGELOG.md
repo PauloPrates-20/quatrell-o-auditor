@@ -2,6 +2,12 @@
 
 # Quatrell, o Auditor
 
+## [2.1.0] - 2025-02-15
+
+### Added
+- Created `/corrigir` command to fix incorrect XP, gold and gem logs.
+- Created an entry for `/corrigir` in the user manual. 
+
 ## [2.0.2] - 2025-02-12
 
 ### Added
