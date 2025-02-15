@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch --include ./src/* ./src/main.ts",
     "start": "node dist/main.js",
     "build": "tsup src/**/*.ts",
     "register": "tsx src/deploy-commands.ts"
