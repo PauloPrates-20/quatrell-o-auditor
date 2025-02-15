@@ -221,7 +221,7 @@ client.once(import_discord.Events.ClientReady, (readyClient) => {
 client.on(import_discord.Events.InteractionCreate, async (interaction) => {
   if (interaction.isAutocomplete()) {
     const command2 = client.commands.get(interaction.commandName);
-    if (command2.data.name === "personagem") {
+    if (command2.data.name === "personagem" || command2.data.name === "corrigir" && interaction.options.getSubcommand() === "xp") {
       const player = await loadPlayer(interaction.member.id);
       if (!player) {
         await interaction.respond([]);

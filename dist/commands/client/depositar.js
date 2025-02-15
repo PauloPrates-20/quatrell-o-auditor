@@ -102,7 +102,7 @@ var tiersTable = [
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
 var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
-  GemTypes2["comum"] = "Comum(ns)";
+  GemTypes2["comum"] = "Comum";
   GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
   GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
   return GemTypes2;

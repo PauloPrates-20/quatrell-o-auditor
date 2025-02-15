@@ -157,6 +157,14 @@ var Sanitizer = class {
     const key = name.replace(/\s/g, "_").normalize("NFD").replace(/\W/g, "").toLowerCase();
     return { name, key };
   }
+  static urlComponents(url) {
+    const components = url.match(/\d{18,}/g);
+    const [guildId, channelId, messageId] = components;
+    return [guildId, channelId, messageId];
+  }
+  static gemType(input) {
+    return input.normalize("NFD").replace(/\W/g, "").toLowerCase();
+  }
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
