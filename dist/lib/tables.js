@@ -20,6 +20,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/lib/tables.ts
 var tables_exports = {};
 __export(tables_exports, {
+  GemTypes: () => GemTypes,
   levelsTable: () => levelsTable,
   tiersTable: () => tiersTable
 });
@@ -56,8 +57,15 @@ var tiersTable = [
   { level: 16, tier: "<:06_cobalto:1012215386164428930>" },
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
+var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
+  GemTypes2["comum"] = "Comum(ns)";
+  GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
+  GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
+  return GemTypes2;
+})(GemTypes || {});
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  GemTypes,
   levelsTable,
   tiersTable
 });

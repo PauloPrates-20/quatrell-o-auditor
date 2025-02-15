@@ -101,6 +101,12 @@ var tiersTable = [
   { level: 16, tier: "<:06_cobalto:1012215386164428930>" },
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
+var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
+  GemTypes2["comum"] = "Comum(ns)";
+  GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
+  GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
+  return GemTypes2;
+})(GemTypes || {});
 
 // src/lib/classes.ts
 var Player = class {
@@ -263,30 +269,38 @@ Para: <@${targets[1]}>`;
 // src/commands/client/transferir.ts
 module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("transferir").setDescription("Transfere ouro ou gemas para outro jogador.").addSubcommand(
-    (subcommand) => subcommand.setName("ouro").setDescription("Transfere ouro para outro jogador.").addUserOption((option) => option.setName("jogador").setDescription("Jogador que vai receber a transfer\xEAncia.").setRequired(true)).addIntegerOption((option) => option.setName("ouro").setDescription("Quantidade de ouro para transferir").setRequired(true))
+    (subcommand) => subcommand.setName("ouro").setDescription("Transfere ouro para outro jogador.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador que vai receber a transfer\xEAncia.").setRequired(true)
+    ).addIntegerOption(
+      (option) => option.setName("ouro").setDescription("Quantidade de ouro para transferir").setRequired(true)
+    )
   ).addSubcommand(
-    (subcommand) => subcommand.setName("gema").setDescription("Transfere gemas para outro jogador.").addUserOption((option) => option.setName("jogador").setDescription("Jogador que vai receber a transfer\xEAncia.").setRequired(true)).addStringOption(
+    (subcommand) => subcommand.setName("gema").setDescription("Transfere gemas para outro jogador.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador que vai receber a transfer\xEAncia.").setRequired(true)
+    ).addStringOption(
       (option) => option.setName("tipo").setDescription("Tipo de gema a transferir.").addChoices(
         { name: "Comum", value: "comum" },
         { name: "Transmuta\xE7\xE3o", value: "transmutacao" },
         { name: "Ressurei\xE7\xE3o", value: "ressureicao" }
       ).setRequired(true)
-    ).addIntegerOption((option) => option.setName("gemas").setDescription("Quantidade de gemas a transferir").setRequired(true))
+    ).addIntegerOption(
+      (option) => option.setName("gemas").setDescription("Quantidade de gemas a transferir").setRequired(true)
+    )
   ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
-    const gemTypes = { comum: "Comum", transmutacao: "Transmuta\xE7\xE3o", ressureicao: "Ressurei\xE7\xE3o" };
-    const author = interaction.member.id;
-    const target = interaction.options.getMember("jogador").id;
+    const author = interaction.user.id;
+    const target = interaction.options.getUser("jogador").id;
+    const amount = interaction.options.getInteger("ouro") ?? interaction.options.getInteger("gemas");
     if (author === target) {
       await interaction.editReply("N\xE3o \xE9 poss\xEDvel transferir para si mesmo.");
       return;
     }
-    const transferencyChannel = channels.transferencies;
+    const transferencyChannel = interaction.client.channels.cache.get(channels.transferencies);
     const [authorPlayer, targetPlayer] = await Promise.all([loadPlayer(author), loadPlayer(target)]);
     const subcommand = interaction.options.getSubcommand();
     if (!authorPlayer) {
-      await interaction.editReply("Jogador n\xE3o encontrado. Utilize /registrar para se cadastrar.");
+      await interaction.editReply("Jogador n\xE3o encontrado. Utilize `/registrar` para se cadastrar.");
       return;
     }
     if (!targetPlayer) {
@@ -294,21 +308,20 @@ module.exports = {
       return;
     }
     if (subcommand === "ouro") {
-      const amount = interaction.options.getInteger("ouro");
-      const goldLogChannel = channels.bank;
+      const bankChannel = interaction.client.channels.cache.get(channels.bank);
       if (authorPlayer.gold < amount) {
         await interaction.editReply("Ouro insuficiente.");
         return;
       }
-      const transferencyLog = new Log("transferencia", [author, target], transferencyChannel, transferencyLogBuilder("ouro", [author, target], amount));
-      const sourceMessage = await interaction.client.channels.cache.get(transferencyChannel).send(transferencyLog.content);
+      const transferencyLog = new Log("transferencia", [author, target], transferencyChannel.id, transferencyLogBuilder("ouro", [author, target], amount));
+      const sourceMessage = await transferencyChannel.send(transferencyLog.content);
       const source = sourceMessage.url;
       authorPlayer.subGold(amount);
       targetPlayer.addGold(amount);
-      const authorLog = new Log("ouro", author, goldLogChannel, goldLogBuilder(authorPlayer, "retira", amount, source));
-      const targetLog = new Log("ouro", target, goldLogChannel, goldLogBuilder(targetPlayer, "deposita", amount, source));
-      interaction.client.channels.cache.get(goldLogChannel).send(authorLog.content);
-      interaction.client.channels.cache.get(goldLogChannel).send(targetLog.content);
+      const authorLog = new Log("ouro", author, bankChannel.id, goldLogBuilder(authorPlayer, "retira", amount, source));
+      const targetLog = new Log("ouro", target, bankChannel.id, goldLogBuilder(targetPlayer, "deposita", amount, source));
+      bankChannel.send(authorLog.content);
+      bankChannel.send(targetLog.content);
       try {
         await Promise.all(
           [
@@ -324,21 +337,21 @@ module.exports = {
       }
     } else if (subcommand === "gema") {
       const gemType = interaction.options.getString("tipo");
-      const amount = interaction.options.getInteger("gemas");
-      const gemChannel = channels.treasure;
-      if (authorPlayer.gems[gemType] < amount) {
+      const amount2 = interaction.options.getInteger("gemas");
+      const treasureChannel = interaction.client.channels.cache.get(channels.treasure);
+      if (authorPlayer.gems[gemType] < amount2) {
         await interaction.editReply("Gemas insuficientes");
         return;
       }
-      const transferencyLog = new Log("transferencia", [author, target], transferencyChannel, transferencyLogBuilder("gema", [author, target], amount, gemType));
-      const sourceMessage = await interaction.client.channels.cache.get(transferencyChannel).send(transferencyLog.content);
+      const transferencyLog = new Log("transferencia", [author, target], transferencyChannel.id, transferencyLogBuilder("gema", [author, target], amount2, gemType));
+      const sourceMessage = await transferencyChannel.send(transferencyLog.content);
       const source = sourceMessage.url;
-      authorPlayer.subGems(gemType, amount);
-      targetPlayer.addGems(gemType, amount);
-      const authorLog = new Log("gema", author, gemChannel, gemLogBuilder(authorPlayer, gemType, amount, "retira", source));
-      const targetLog = new Log("gema", target, gemChannel, gemLogBuilder(targetPlayer, gemType, amount, "deposita", source));
-      interaction.client.channels.cache.get(gemChannel).send(authorLog.content);
-      interaction.client.channels.cache.get(gemChannel).send(targetLog.content);
+      authorPlayer.subGems(gemType, amount2);
+      targetPlayer.addGems(gemType, amount2);
+      const authorLog = new Log("gema", author, treasureChannel.id, gemLogBuilder(authorPlayer, gemType, amount2, "retira", source));
+      const targetLog = new Log("gema", target, treasureChannel.id, gemLogBuilder(targetPlayer, gemType, amount2, "deposita", source));
+      treasureChannel.send(authorLog.content);
+      treasureChannel.send(targetLog.content);
       try {
         await Promise.all(
           [
@@ -348,7 +361,7 @@ module.exports = {
             registerLog(targetLog, target)
           ]
         );
-        await interaction.editReply(`${amount} Gema(s) ${gemTypes[gemType]} transferidas para <@${target}>.`);
+        await interaction.editReply(`${amount2} Gema(s) ${GemTypes[gemType]} transferidas para <@${target}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao realizar transfer\xEAncia: ${error}`);
       }

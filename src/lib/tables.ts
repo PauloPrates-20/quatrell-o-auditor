@@ -33,3 +33,9 @@ export const tiersTable = [
 	{ level: 16, tier: '<:06_cobalto:1012215386164428930>' },
 	{ level: 19, tier: '<:07_adamante:1012215399733018714>' },
 ];
+
+export enum GemTypes {
+  comum = 'Comum(ns)',
+  transmutacao = 'da Transmutação',
+  ressureicao = 'da Ressureição'
+}

@@ -193,14 +193,15 @@ module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("listar").setDescription("Exibe uma lista de seus personagens cadastrados."),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
-    const player = await loadPlayer(interaction.member.id);
+    const author = interaction.user.id;
+    const player = await loadPlayer(author);
     if (!player) {
-      await interaction.editReply("Jogador n\xE3o cadastrado. Utilize o comando /registrar para se cadastrar.");
+      await interaction.editReply("Jogador n\xE3o cadastrado. Utilize o comando `/registrar` para se cadastrar.");
       return;
     }
     const characters = player.characters;
     if (Object.keys(characters).length === 0) {
-      await interaction.editReply("Nenhum personagem cadastrado. Utilize o comando /personagem para come\xE7ar a cadastrar seus personagens.");
+      await interaction.editReply("Nenhum personagem cadastrado. Utilize o comando `/personagem` para come\xE7ar a cadastrar seus personagens.");
       return;
     }
     let text = "";

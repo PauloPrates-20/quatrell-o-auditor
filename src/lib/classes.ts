@@ -124,3 +124,24 @@ export class Log {
 		this.content = content;
 	}
 }
+
+export class Sanitizer {
+  static character(input: string) {
+    const name = input.trim().replace(/\s{2,}/g, ' ');
+    const key = name.replace(/\s/g, '_').normalize('NFD').replace(/\W/g, '').toLowerCase();
+
+    return { name, key };
+  }
+
+  static urlComponents(url: string): string[] | null[] {
+    const components = url.match(/\d{18,}/g);
+
+    if (!components || components.length !== 3) {
+      return [null, null, null];
+    }
+
+    const [guildId, channelId, messageId] = components;
+
+    return [guildId, channelId, messageId];
+  }
+}

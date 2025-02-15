@@ -8,17 +8,19 @@ module.exports = {
 		.setDescription('Exibe uma lista de seus personagens cadastrados.'),
 	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.deferReply({ ephemeral: true });
-		const player = await loadPlayer((interaction.member as GuildMember).id);
+    
+    const author = interaction.user.id;
+		const player = await loadPlayer(author);
 
 		if (!player) {
-			await interaction.editReply('Jogador não cadastrado. Utilize o comando /registrar para se cadastrar.');
+			await interaction.editReply('Jogador não cadastrado. Utilize o comando `/registrar` para se cadastrar.');
 			return;
 		}
 
 		const characters = player.characters;
 
 		if (Object.keys(characters).length === 0) {
-			await interaction.editReply('Nenhum personagem cadastrado. Utilize o comando /personagem para começar a cadastrar seus personagens.');
+			await interaction.editReply('Nenhum personagem cadastrado. Utilize o comando `/personagem` para começar a cadastrar seus personagens.');
 			return;
 		}
 

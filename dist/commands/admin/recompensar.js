@@ -101,6 +101,12 @@ var tiersTable = [
   { level: 16, tier: "<:06_cobalto:1012215386164428930>" },
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
+var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
+  GemTypes2["comum"] = "Comum(ns)";
+  GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
+  GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
+  return GemTypes2;
+})(GemTypes || {});
 
 // src/lib/classes.ts
 var Player = class {
@@ -251,49 +257,55 @@ Origem: ${source}`;
 // src/commands/admin/recompensar.ts
 module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("recompensar").setDescription("Deposita recompensas de doa\xE7\xF5es para os jogadores.").setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers).addSubcommand(
-    (subcommand) => subcommand.setName("ouro").setDescription("Deposita a recompensa em ouro das doa\xE7\xF5es.").addUserOption((option) => option.setName("jogador").setDescription("Jogador a receber a recompensa.").setRequired(true)).addIntegerOption((option) => option.setName("ouro").setDescription("Quantidade de ouro a depositar.").setRequired(true))
+    (subcommand) => subcommand.setName("ouro").setDescription("Deposita a recompensa em ouro das doa\xE7\xF5es.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador a receber a recompensa.").setRequired(true)
+    ).addIntegerOption(
+      (option) => option.setName("ouro").setDescription("Quantidade de ouro a depositar.").setRequired(true)
+    )
   ).addSubcommand(
-    (subcommand) => subcommand.setName("gema").setDescription("Deposita a recompensa em gemas das doa\xE7\xF5es.").addUserOption((option) => option.setName("jogador").setDescription("Jogador a receber a recompensa.").setRequired(true)).addStringOption(
+    (subcommand) => subcommand.setName("gema").setDescription("Deposita a recompensa em gemas das doa\xE7\xF5es.").addUserOption(
+      (option) => option.setName("jogador").setDescription("Jogador a receber a recompensa.").setRequired(true)
+    ).addStringOption(
       (option) => option.setName("tipo").setDescription("Tipo de gema a depositar.").addChoices(
         { name: "Comum", value: "comum" },
         { name: "Transmuta\xE7\xE3o", value: "transmutacao" },
         { name: "Ressurei\xE7\xE3o", value: "ressureicao" }
       ).setRequired(true)
-    ).addIntegerOption((option) => option.setName("gemas").setDescription("Quantidade de gemas a depositar.").setRequired(true))
+    ).addIntegerOption(
+      (option) => option.setName("gemas").setDescription("Quantidade de gemas a depositar.").setRequired(true)
+    )
   ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
-    const target = interaction.options.getMember("jogador").id;
+    const target = interaction.options.getUser("jogador").id;
     const subcommand = interaction.options.getSubcommand();
     const source = "Recompensa por doa\xE7\xE3o ao servidor.";
     const player = await loadPlayer(target);
+    const amount = interaction.options.getInteger("ouro") ?? interaction.options.getInteger("gemas");
+    const bankChannel = interaction.client.channels.cache.get(channels.bank);
+    const treasureChannel = interaction.client.channels.cache.get(channels.treasure);
     if (!player) {
       await interaction.editReply("Jogador n\xE3o encontrado.");
       return;
     }
     if (subcommand === "ouro") {
-      const amount = interaction.options.getInteger("ouro");
-      const channel = channels.bank;
       player.addGold(amount);
-      const log = new Log("ouro", target, channel, goldLogBuilder(player, "deposita", amount, source));
+      const log = new Log("ouro", target, bankChannel.id, goldLogBuilder(player, "deposita", amount, source));
       try {
         await Promise.all([updatePlayer(player), registerLog(log, target)]);
-        interaction.client.channels.cache.get(channel).send(log.content);
+        bankChannel.send(log.content);
         await interaction.editReply(`${amount} PO depositados para <@${target}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao depositar recompensas: ${error}`);
       }
     } else if (subcommand === "gema") {
-      const gemTypes = { comum: "Comum", transmutacao: "da Transmuta\xE7\xE3o", ressureicao: "da Ressurei\xE7\xE3o" };
-      const channel = channels.treasure;
       const gemType = interaction.options.getString("tipo");
-      const amount = interaction.options.getInteger("gemas");
       player.addGems(gemType, amount);
-      const log = new Log("gema", target, channel, gemLogBuilder(player, gemType, amount, "deposita", source));
+      const log = new Log("gema", target, treasureChannel.id, gemLogBuilder(player, gemType, amount, "deposita", source));
       try {
         await Promise.all([updatePlayer(player), registerLog(log, target)]);
-        interaction.client.channels.cache.get(channel).send(log.content);
-        await interaction.editReply(`${amount} Gema(s) ${gemTypes[gemType]} depositadas para <@${target}>.`);
+        treasureChannel.send(log.content);
+        await interaction.editReply(`${amount} Gema(s) ${GemTypes[gemType]} depositadas para <@${target}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao depositar recompensas: ${error}`);
       }
