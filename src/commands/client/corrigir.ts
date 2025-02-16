@@ -366,6 +366,11 @@ module.exports = {
       name = name ?? originalName;
       key = key ?? originalKey;
 
+      if (!player.characters[originalKey] || !player.characters[key]) {
+        await interaction.editReply('Personagem não encontrado. Utilize o comando `/listar` para conferir seus personagens.');
+        return;
+      }
+
       if (originalAction === action) {
         if (originalAmount !== amount || originalKey !== key) {
           if (action === 'deposita') {
@@ -398,11 +403,13 @@ module.exports = {
         }
       }
 
-      const oldLog = new Log('xp', author, channel.id, xpLogBuilder(player, originalKey, originalAction === 'retira' ? originalAmount : -originalAmount, source))
       const log = new Log('xp', author, channel.id, xpLogBuilder(player, key, action === 'retira' ? -amount : amount, source));
 
       try {
-        if (originalKey !== key) await channel.send(`Correção do lançamento: ${messageUrl}\n\n` + oldLog.content);
+        if (originalKey !== key) {
+          const oldLog = new Log('xp', author, channel.id, xpLogBuilder(player, originalKey, originalAction === 'retira' ? originalAmount : -originalAmount, messageUrl))
+          await channel.send(`Correção do lançamento: ${messageUrl}\n\n` + oldLog.content);
+        }
         await applyCorrection(player, author, log, channel, messageUrl, message, interaction);
       } catch (error: any) {
         await interaction.editReply(`Falha ao corrigir lançamento: ${error.message}`);

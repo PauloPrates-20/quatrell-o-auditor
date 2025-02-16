@@ -2,6 +2,12 @@
 
 # Quatrell, o Auditor
 
+## [2.1.1] - 2025-02-16
+
+### Changed
+- Moved the correction log generated for character changes to an if statement.
+- Pointed the correction log generated for character changes to the selected message.
+
 ## [2.1.0] - 2025-02-15
 
 ### Added
