@@ -4,6 +4,9 @@
 
 ## [2.1.1] - 2025-02-16
 
+### Added
+- Added character validation for `/corrigir xp`.
+
 ### Changed
 - Moved the correction log generated for character changes to an if statement.
 - Pointed the correction log generated for character changes to the selected message.
