@@ -8,9 +8,18 @@ import { Client, Events, Collection, GatewayIntentBits, UserResolvable, GuildMem
 import { token } from './config';
 import { loadPlayer } from './lib/firebase/firestoreQuerys';
 import { CustomClient } from './lib/definitions';
+import express from 'express';
+import router from './router';
 
+// initializes app
+const app = express();
+app.use(express.json());
+app.use('/api', router);
+app.listen(5000, () => {
+  console.log('API ready at port 5000!');
+})
 // Creates the client instace
-const client: CustomClient = new Client({
+export const client: CustomClient = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
@@ -45,7 +54,7 @@ for (const folder of commandFolders) {
 
 // Bot login confirmation
 client.once(Events.ClientReady, readyClient => {
-	console.log(`Ready. Logged as ${readyClient.user.tag}`);
+	console.log(`Ready! Logged as ${readyClient.user.tag}.`);
 });
 
 // Event to receive and execute the chat commands
