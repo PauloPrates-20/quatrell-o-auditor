@@ -15,9 +15,11 @@
   "dependencies": {
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "firebase": "^10.12.4"
   },
   "devDependencies": {
+    "@types/express": "^5.0.1",
     "ts-node-dev": "^2.0.0",
     "tsup": "^8.3.6",
     "tsx": "^4.19.2",
