@@ -1,7 +1,7 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
-import { goldLogBuilder, purchaseLogBuilder, vendingLogBuilder } from '../../lib/messages';
+import { goldLogBuilder, vendingLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 
 module.exports = {
