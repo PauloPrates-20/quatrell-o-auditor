@@ -48,3 +48,9 @@ export function purchaseLogBuilder(target: string, item: string, amount: number,
 
   return message;
 }
+
+export function vendingLogBuilder(target: string, item: string, amount: number, price: number) {
+  const message = `Jogador: <@${target}>\nVender: ${amount}x ${item}\nValor: ${price} PO`;
+
+  return message;
+}

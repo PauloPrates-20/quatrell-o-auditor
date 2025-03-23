@@ -1,13 +1,13 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
-import { goldLogBuilder, purchaseLogBuilder } from '../../lib/messages';
+import { goldLogBuilder, purchaseLogBuilder, vendingLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('comprar')
-    .setDescription('Realiza compras de itens para o jogador.')
+    .setName('vender')
+    .setDescription('Realiza vendas de itens para o jogador.')
     .addStringOption(option =>
       option
         .setName('item')
@@ -24,7 +24,7 @@ module.exports = {
     .addIntegerOption(option =>
       option
         .setName('preço')
-        .setDescription('Preço unitário do item comprado')
+        .setDescription('Preço unitário do item vendido (preço cheio)')
         .setMinValue(1)
         .setRequired(true)
     ),
@@ -35,8 +35,8 @@ module.exports = {
     const player = await loadPlayer(author);
     const item = interaction.options.getString('item')!;
     const amount = interaction.options.getInteger('quantidade')!;
-    const price = interaction.options.getInteger('preço')! * amount;
-    const purchaseChannel = interaction.client.channels.cache.get(channels.shop!) as TextChannel;
+    const price = Math.floor(interaction.options.getInteger('preço')! * amount / 2);
+    const vendingChannel = interaction.client.channels.cache.get(channels.shop!) as TextChannel;
     const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
 
     if (!player) {
@@ -44,27 +44,22 @@ module.exports = {
       return;
     }
 
-    if (player.gold < price) {
-      await interaction.editReply('Ouro insuficiente!');
-      return;
-    }
-
-    const purchaseLog = new Log('purchase', author, purchaseChannel.id, purchaseLogBuilder(author, item, amount, price));
+    const vendingLog = new Log('vending', author, vendingChannel.id, vendingLogBuilder(author, item, amount, price));
 
     try {
-      const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
-      await registerLog(purchaseLog, author);
-
-      player.subGold(price);
-      const goldLog = new Log('gold', author, bankChannel.id, goldLogBuilder(player, 'retira', price, purchaseMessage.url));
+      const vendingMessage = await vendingChannel.send(vendingLog.content);
+      await registerLog(vendingLog, author);
+      
+      player.addGold(price);
+      const goldLog = new Log('gold', author, bankChannel.id, goldLogBuilder(player, 'deposita', price, vendingMessage.url));
 
       await updatePlayer(player);
       await bankChannel.send(goldLog.content);
       await registerLog(goldLog, author);
 
-      await interaction.editReply(`${amount}x ${item} comprado(s) com sucesso!`);
+      await interaction.editReply(`${amount}x ${item} vendido(s) com sucesso!`);
     } catch (error) {
-      await interaction.editReply(`Falha ao realizar a compra: ${error}`);
+      await interaction.editReply(`Falha ao realizar a venda: ${error}`);
     }
   }
 }
