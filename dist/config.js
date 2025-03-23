@@ -49,6 +49,7 @@ var {
   CHANNELS_TREASURE,
   CHANNELS_TRANSFERENCIES,
   CHANNELS_GENERAL,
+  CHANNELS_SHOP,
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
   FIREBASE_PROJECT_ID,
@@ -76,7 +77,8 @@ var channels = {
   xp: CHANNELS_XP,
   treasure: CHANNELS_TREASURE,
   transferencies: CHANNELS_TRANSFERENCIES,
-  general: CHANNELS_GENERAL
+  general: CHANNELS_GENERAL,
+  shop: CHANNELS_SHOP
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

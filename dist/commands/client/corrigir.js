@@ -37,6 +37,7 @@ var {
   CHANNELS_TREASURE,
   CHANNELS_TRANSFERENCIES,
   CHANNELS_GENERAL,
+  CHANNELS_SHOP,
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
   FIREBASE_PROJECT_ID,
@@ -61,7 +62,8 @@ var channels = {
   xp: CHANNELS_XP,
   treasure: CHANNELS_TREASURE,
   transferencies: CHANNELS_TRANSFERENCIES,
-  general: CHANNELS_GENERAL
+  general: CHANNELS_GENERAL,
+  shop: CHANNELS_SHOP
 };
 
 // src/lib/validation.ts
@@ -519,6 +521,10 @@ module.exports = {
       source = source ?? originalSource;
       name = name ?? originalName;
       key = key ?? originalKey;
+      if (!player.characters[originalKey] || !player.characters[key]) {
+        await interaction.editReply("Personagem n\xE3o encontrado. Utilize o comando `/listar` para conferir seus personagens.");
+        return;
+      }
       if (originalAction === action) {
         if (originalAmount !== amount || originalKey !== key) {
           if (action === "deposita") {
@@ -546,12 +552,14 @@ module.exports = {
           player.subXp(key, amount);
         }
       }
-      const oldLog = new Log("xp", author, channel.id, xpLogBuilder(player, originalKey, originalAction === "retira" ? originalAmount : -originalAmount, source));
       const log = new Log("xp", author, channel.id, xpLogBuilder(player, key, action === "retira" ? -amount : amount, source));
       try {
-        if (originalKey !== key) await channel.send(`Corre\xE7\xE3o do lan\xE7amento: ${messageUrl}
+        if (originalKey !== key) {
+          const oldLog = new Log("xp", author, channel.id, xpLogBuilder(player, originalKey, originalAction === "retira" ? originalAmount : -originalAmount, messageUrl));
+          await channel.send(`Corre\xE7\xE3o do lan\xE7amento: ${messageUrl}
 
 ` + oldLog.content);
+        }
         await applyCorrection(player, author, log, channel, messageUrl, message, interaction);
       } catch (error) {
         await interaction.editReply(`Falha ao corrigir lan\xE7amento: ${error.message}`);

@@ -27,12 +27,15 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/main.ts
-var main_exports = {};
-__export(main_exports, {
-  client: () => client
+// src/router.ts
+var router_exports = {};
+__export(router_exports, {
+  default: () => router_default
 });
-module.exports = __toCommonJS(main_exports);
+module.exports = __toCommonJS(router_exports);
+var import_express2 = require("express");
+
+// src/main.ts
 var import_node_fs = __toESM(require("fs"));
 var import_node_path = __toESM(require("path"));
 var import_discord = require("discord.js");
@@ -243,82 +246,9 @@ async function updatePlayer(playerData) {
 }
 
 // src/main.ts
-var import_express2 = __toESM(require("express"));
-
-// src/router.ts
-var import_express = require("express");
-
-// src/lib/messages.ts
-function goldLogBuilder(player, action, amount, source) {
-  const actionText = { retira: "Retira", deposita: "Deposita" };
-  const message = `Jogador: <@${player.id}>
-${actionText[action]}: ${amount} PO
-Ouro Total: ${player.gold} PO
-Origem: ${source}`;
-  return message;
-}
-function purchaseLogBuilder(target, item, amount, price) {
-  const message = `Jogador: <@${target}>
-Compra: ${amount}x ${item}
-Valor: ${price} PO`;
-  return message;
-}
-
-// src/router.ts
-var router = (0, import_express.Router)();
-var router_default = router.post("/buy", async (req, res) => {
-  const { accessToken, item } = req.body;
-  console.log(accessToken, item);
-  if (!(accessToken || item)) {
-    res.status(400).json({ error: "Missing required fields!" });
-    return;
-  }
-  const response = await fetch("https://discord.com/api/oauth2/@me", {
-    headers: { "Authorization": `Bearer ${req.body.accessToken}` }
-  });
-  const data = await response.json();
-  if (data.code == 0) {
-    res.status(400).json({ ok: false, message: data.message });
-    return;
-  }
-  const playerId = data.user.id;
-  const user = await client.users.fetch(playerId);
-  console.log(playerId);
-  if (!user) {
-    res.status(404).json({ error: "Player not found!" });
-    return;
-  }
-  const player = await loadPlayer(playerId);
-  if (!player) {
-    res.status(404).json({ error: "Jogador n\xE3o encontrado! Utilize o comando `/registrar` para se cadastrar." });
-    return;
-  }
-  if (player.gold < item.price) {
-    res.status(400).json({ error: "Ouro insuficiente!" });
-    return;
-  }
-  try {
-    const purchaseChannel = client.channels.cache.get(channels.shop);
-    const bankChannel = client.channels.cache.get(channels.bank);
-    const purchaseLog = new Log("purchase", playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, item.name, 1, item.value));
-    const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
-    player.subGold(item.value);
-    const goldLog = new Log("gold", playerId, bankChannel.id, goldLogBuilder(player, "retira", item.value, purchaseMessage.url));
-    Promise.all([
-      bankChannel.send(goldLog.content),
-      updatePlayer(player),
-      registerLog(goldLog, playerId),
-      registerLog(purchaseLog, playerId)
-    ]);
-  } catch (error) {
-    res.status(500).json({ error: "N\xE3o foi poss\xEDvel concluir a compra!", details: error });
-  }
-  res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
-});
-
-// src/main.ts
-var app2 = (0, import_express2.default)();
-app2.use(import_express2.default.json());
+var import_express = __toESM(require("express"));
+var app2 = (0, import_express.default)();
+app2.use(import_express.default.json());
 app2.use("/api", router_default);
 app2.listen(5e3, () => {
   console.log("API ready at port 5000!");
@@ -420,7 +350,71 @@ client.on(import_discord.Events.InteractionCreate, async (interaction) => {
   }
 });
 client.login(token);
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  client
+
+// src/lib/messages.ts
+function goldLogBuilder(player, action, amount, source) {
+  const actionText = { retira: "Retira", deposita: "Deposita" };
+  const message = `Jogador: <@${player.id}>
+${actionText[action]}: ${amount} PO
+Ouro Total: ${player.gold} PO
+Origem: ${source}`;
+  return message;
+}
+function purchaseLogBuilder(target, item, amount, price) {
+  const message = `Jogador: <@${target}>
+Compra: ${amount}x ${item}
+Valor: ${price} PO`;
+  return message;
+}
+
+// src/router.ts
+var router = (0, import_express2.Router)();
+var router_default = router.post("/buy", async (req, res) => {
+  const { accessToken, item } = req.body;
+  console.log(accessToken, item);
+  if (!(accessToken || item)) {
+    res.status(400).json({ error: "Missing required fields!" });
+    return;
+  }
+  const response = await fetch("https://discord.com/api/oauth2/@me", {
+    headers: { "Authorization": `Bearer ${req.body.accessToken}` }
+  });
+  const data = await response.json();
+  if (data.code == 0) {
+    res.status(400).json({ ok: false, message: data.message });
+    return;
+  }
+  const playerId = data.user.id;
+  const user = await client.users.fetch(playerId);
+  console.log(playerId);
+  if (!user) {
+    res.status(404).json({ error: "Player not found!" });
+    return;
+  }
+  const player = await loadPlayer(playerId);
+  if (!player) {
+    res.status(404).json({ error: "Jogador n\xE3o encontrado! Utilize o comando `/registrar` para se cadastrar." });
+    return;
+  }
+  if (player.gold < item.price) {
+    res.status(400).json({ error: "Ouro insuficiente!" });
+    return;
+  }
+  try {
+    const purchaseChannel = client.channels.cache.get(channels.shop);
+    const bankChannel = client.channels.cache.get(channels.bank);
+    const purchaseLog = new Log("purchase", playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, item.name, 1, item.value));
+    const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
+    player.subGold(item.value);
+    const goldLog = new Log("gold", playerId, bankChannel.id, goldLogBuilder(player, "retira", item.value, purchaseMessage.url));
+    Promise.all([
+      bankChannel.send(goldLog.content),
+      updatePlayer(player),
+      registerLog(goldLog, playerId),
+      registerLog(purchaseLog, playerId)
+    ]);
+  } catch (error) {
+    res.status(500).json({ error: "N\xE3o foi poss\xEDvel concluir a compra!", details: error });
+  }
+  res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
 });

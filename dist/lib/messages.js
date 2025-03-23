@@ -22,7 +22,9 @@ var messages_exports = {};
 __export(messages_exports, {
   gemLogBuilder: () => gemLogBuilder,
   goldLogBuilder: () => goldLogBuilder,
+  purchaseLogBuilder: () => purchaseLogBuilder,
   transferencyLogBuilder: () => transferencyLogBuilder,
+  vendingLogBuilder: () => vendingLogBuilder,
   xpLogBuilder: () => xpLogBuilder
 });
 module.exports = __toCommonJS(messages_exports);
@@ -68,10 +70,24 @@ Transfere: ${amount} ${currencyText}
 Para: <@${targets[1]}>`;
   return message;
 }
+function purchaseLogBuilder(target, item, amount, price) {
+  const message = `Jogador: <@${target}>
+Compra: ${amount}x ${item}
+Valor: ${price} PO`;
+  return message;
+}
+function vendingLogBuilder(target, item, amount, price) {
+  const message = `Jogador: <@${target}>
+Vender: ${amount}x ${item}
+Valor: ${price} PO`;
+  return message;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   gemLogBuilder,
   goldLogBuilder,
+  purchaseLogBuilder,
   transferencyLogBuilder,
+  vendingLogBuilder,
   xpLogBuilder
 });

@@ -22,7 +22,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// src/commands/admin/ajustar.ts
+// src/commands/client/vender.ts
 var import_discord = require("discord.js");
 
 // src/lib/firebase/firestoreQuerys.ts
@@ -103,12 +103,6 @@ var tiersTable = [
   { level: 16, tier: "<:06_cobalto:1012215386164428930>" },
   { level: 19, tier: "<:07_adamante:1012215399733018714>" }
 ];
-var GemTypes = /* @__PURE__ */ ((GemTypes2) => {
-  GemTypes2["comum"] = "Comum";
-  GemTypes2["transmutacao"] = "da Transmuta\xE7\xE3o";
-  GemTypes2["ressureicao"] = "da Ressurei\xE7\xE3o";
-  return GemTypes2;
-})(GemTypes || {});
 
 // src/lib/classes.ts
 var Player = class {
@@ -184,25 +178,31 @@ var Player = class {
     this.gems[type] -= amount;
   }
 };
-var Sanitizer = class {
-  static character(input) {
-    const name = input.trim().replace(/\s{2,}/g, " ");
-    const key = name.replace(/\s/g, "_").normalize("NFD").replace(/\W/g, "").toLowerCase();
-    return { name, key };
-  }
-  static urlComponents(url) {
-    const components = url.match(/\d{18,}/g);
-    const [guildId, channelId, messageId] = components;
-    return [guildId, channelId, messageId];
-  }
-  static gemType(input) {
-    return input.normalize("NFD").replace(/\W/g, "").toLowerCase();
+var Log = class {
+  constructor(type, targets, channels2, content) {
+    this.type = type;
+    this.targets = targets;
+    this.channels = channels2;
+    this.content = content;
   }
 };
 
 // src/lib/firebase/firestoreQuerys.ts
 var app = (0, import_app.initializeApp)(firebaseConfig);
 var db = (0, import_firestore.getFirestore)(app);
+async function registerLog(logData, playerId) {
+  const ref = (0, import_firestore.collection)(db, collections.users, playerId.toString(), "logs");
+  const convertedLog = {
+    ...logData,
+    timestamp: (0, import_firestore.serverTimestamp)()
+  };
+  try {
+    await (0, import_firestore.addDoc)(ref, convertedLog);
+    console.log(`Log registered succesfully for player ${playerId}.`);
+  } catch (error) {
+    console.error(`Error registering log: ${error}`);
+  }
+}
 async function loadPlayer(playerId) {
   const ref = (0, import_firestore.doc)(db, collections.users, playerId);
   try {
@@ -229,99 +229,56 @@ async function updatePlayer(playerData) {
   }
 }
 
-// src/commands/admin/ajustar.ts
+// src/lib/messages.ts
+function goldLogBuilder(player, action, amount, source) {
+  const actionText = { retira: "Retira", deposita: "Deposita" };
+  const message = `Jogador: <@${player.id}>
+${actionText[action]}: ${amount} PO
+Ouro Total: ${player.gold} PO
+Origem: ${source}`;
+  return message;
+}
+function vendingLogBuilder(target, item, amount, price) {
+  const message = `Jogador: <@${target}>
+Vender: ${amount}x ${item}
+Valor: ${price} PO`;
+  return message;
+}
+
+// src/commands/client/vender.ts
 module.exports = {
-  data: new import_discord.SlashCommandBuilder().setName("ajustar").setDescription("Ajusta os valores de ouro, gemas ou XP de um jogador.").setDefaultMemberPermissions(import_discord.PermissionFlagsBits.BanMembers).addSubcommand(
-    (subcommand) => subcommand.setName("ouro").setDescription("Ajusta o valor de ouro do jogador.").addUserOption(
-      (option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)
-    ).addIntegerOption(
-      (option) => option.setName("ouro").setDescription("Quantidade de ouro do jogador ap\xF3s o ajuste.").setRequired(true)
-    )
-  ).addSubcommand(
-    (subcommand) => subcommand.setName("gema").setDescription("Ajusta a quantidade de gemas do jogador.").addUserOption(
-      (option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)
-    ).addStringOption(
-      (option) => option.setName("tipo").setDescription("Tipo de gema a ajustar.").addChoices(
-        { name: "Comum", value: "comum" },
-        { name: "Transmuta\xE7\xE3o", value: "transmutacao" },
-        { name: "Ressurei\xE7\xE3o", value: "ressureicao" }
-      ).setRequired(true)
-    ).addIntegerOption(
-      (option) => option.setName("gemas").setDescription("Quantidade de gemas do jogador ap\xF3s o ajuste.").setRequired(true)
-    )
-  ).addSubcommand(
-    (subcommand) => subcommand.setName("xp").setDescription("Ajusta o valor de XP de um personagem do jogador.").addUserOption(
-      (option) => option.setName("jogador").setDescription("Jogador a editar.").setRequired(true)
-    ).addStringOption(
-      (option) => option.setName("personagem").setDescription("Nome do personagem a editar.").setRequired(true).setAutocomplete(true)
-    ).addIntegerOption(
-      (option) => option.setName("xp").setDescription("Quantidade de XP do personagem ap\xF3s o ajuste.").setRequired(true)
-    )
+  data: new import_discord.SlashCommandBuilder().setName("vender").setDescription("Realiza vendas de itens para o jogador.").addStringOption(
+    (option) => option.setName("item").setDescription("Nome do item").setRequired(true)
+  ).addIntegerOption(
+    (option) => option.setName("quantidade").setDescription("Quantidade de items a comprar").setMinValue(1).setRequired(true)
+  ).addIntegerOption(
+    (option) => option.setName("pre\xE7o").setDescription("Pre\xE7o unit\xE1rio do item vendido (pre\xE7o cheio)").setMinValue(1).setRequired(true)
   ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
-    const target = interaction.options.getUser("jogador").id;
     const author = interaction.user.id;
-    const subcommand = interaction.options.getSubcommand();
-    const player = await loadPlayer(target);
-    const amount = interaction.options.getInteger("ouro") ?? interaction.options.getInteger("gemas") ?? interaction.options.getInteger("xp");
+    const player = await loadPlayer(author);
+    const item = interaction.options.getString("item");
+    const amount = interaction.options.getInteger("quantidade");
+    const price = Math.floor(interaction.options.getInteger("pre\xE7o") * amount / 2);
+    const vendingChannel = interaction.client.channels.cache.get(channels.shop);
     const bankChannel = interaction.client.channels.cache.get(channels.bank);
-    const treasureChannel = interaction.client.channels.cache.get(channels.treasure);
-    const xpChannel = interaction.client.channels.cache.get(channels.xp);
     if (!player) {
-      await interaction.editReply("Jogador n\xE3o encontrado.");
+      await interaction.editReply("Jogador n\xE3o encontrado! Utilize o comando `/registrar` para se cadastrar.");
       return;
     }
-    if (subcommand === "ouro") {
-      if (amount < 0) {
-        await interaction.editReply("Valor n\xE3o pode ser menor que 0.");
-        return;
-      }
-      player.gold = amount;
-      try {
-        await updatePlayer(player);
-        await interaction.editReply("Ajuste realizado com sucesso.");
-        bankChannel.send(`Ouro de <@${target}> ajustado para ${amount} PO por <@${author}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
-      }
-    } else if (subcommand === "gema") {
-      const gemType = interaction.options.getString("tipo");
-      if (amount < 0) {
-        await interaction.editReply("Valor n\xE3o pode ser menor que 0.");
-        return;
-      }
-      player.gems[gemType] = amount;
-      try {
-        await updatePlayer(player);
-        await interaction.editReply("Ajuste realizado com sucesso.");
-        treasureChannel.send(`Gemas ${GemTypes[gemType]} de <@${target}> ajustadas para ${amount} por <@${author}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
-      }
-    } else if (subcommand === "xp") {
-      const { name, key } = Sanitizer.character(interaction.options.getString("personagem"));
-      if (/\d/.test(name.charAt(0))) {
-        await interaction.editReply("O nome do personagem n\xE3o pode come\xE7ar com n\xFAmeros.");
-        return;
-      }
-      const character = player.characters[key];
-      if (amount < 0) {
-        await interaction.editReply("Valor n\xE3o pode ser menor que 0.");
-        return;
-      }
-      if (!character) {
-        await interaction.editReply("Personagem n\xE3o encontrado.");
-        return;
-      }
-      player.setXp(key, amount);
-      try {
-        await updatePlayer(player);
-        await interaction.editReply("Ajuste realizado com sucesso.");
-        xpChannel.send(`XP do personagem ${character.name} de <@${target}> ajustado para ${amount} XP por <@${author}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
-      }
+    const vendingLog = new Log("vending", author, vendingChannel.id, vendingLogBuilder(author, item, amount, price));
+    try {
+      const vendingMessage = await vendingChannel.send(vendingLog.content);
+      await registerLog(vendingLog, author);
+      player.addGold(price);
+      const goldLog = new Log("gold", author, bankChannel.id, goldLogBuilder(player, "deposita", price, vendingMessage.url));
+      await updatePlayer(player);
+      await bankChannel.send(goldLog.content);
+      await registerLog(goldLog, author);
+      await interaction.editReply(`${amount}x ${item} vendido(s) com sucesso!`);
+    } catch (error) {
+      await interaction.editReply(`Falha ao realizar a venda: ${error}`);
     }
   }
 };
