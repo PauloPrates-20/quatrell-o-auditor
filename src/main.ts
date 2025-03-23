@@ -15,7 +15,7 @@ import router from './router';
 const app = express();
 app.use(express.json());
 app.use('/api', router);
-app.listen(5000, () => {
+app.listen(5000, '0.0.0.0', () => {
   console.log('API ready at port 5000!');
 })
 // Creates the client instace
