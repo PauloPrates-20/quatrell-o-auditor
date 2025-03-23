@@ -320,7 +320,7 @@ var router_default = router.post("/buy", async (req, res) => {
 var app2 = (0, import_express2.default)();
 app2.use(import_express2.default.json());
 app2.use("/api", router_default);
-app2.listen(5e3, () => {
+app2.listen(5e3, "0.0.0.0", () => {
   console.log("API ready at port 5000!");
 });
 var client = new import_discord.Client({

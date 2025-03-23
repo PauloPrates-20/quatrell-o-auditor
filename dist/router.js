@@ -250,7 +250,7 @@ var import_express = __toESM(require("express"));
 var app2 = (0, import_express.default)();
 app2.use(import_express.default.json());
 app2.use("/api", router_default);
-app2.listen(5e3, () => {
+app2.listen(5e3, "0.0.0.0", () => {
   console.log("API ready at port 5000!");
 });
 var client = new import_discord.Client({
