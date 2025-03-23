@@ -2,6 +2,13 @@
 
 # Quatrell, o Auditor
 
+## [2.2.0] - 2025-03-22
+
+### Added
+- Added API support to make purchases from the official site.
+- Added a new command `/comprar` to automate purchases on the server.
+- Added a new command `/vender` to automate sales on the server.
+
 ## [2.1.1] - 2025-02-16
 
 ### Added
