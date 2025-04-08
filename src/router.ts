@@ -10,10 +10,9 @@ const router = Router();
 
 export default router
   .post('/buy', async (req: Request, res: Response) => {
-    const { accessToken, item } = req.body;
-    console.log(accessToken, item);
+    const { accessToken, item, character } = req.body;
 
-    if (!(accessToken || item)) {
+    if (!(accessToken || item || character)) {
       res.status(400).json({ error: 'Missing required fields!' });
       return;
     }
@@ -52,7 +51,7 @@ export default router
     try {
       const purchaseChannel = client.channels.cache.get(channels.shop!) as TextChannel;
       const bankChannel = client.channels.cache.get(channels.bank!) as TextChannel;
-      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, item.name, 1, item.value));
+      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, character.name, item.name, 1, item.value));
       const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
       
       player.subGold(item.value);
