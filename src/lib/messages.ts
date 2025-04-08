@@ -1,4 +1,4 @@
-import { Player } from './classes';
+import { Character, Player } from './classes';
 import { Gems, Actions } from './definitions';
 
 // Builds the messages used for the logs in the channel #banco
@@ -43,14 +43,14 @@ export function transferencyLogBuilder(type: string, targets: string[], amount: 
   return message;
 }
 
-export function purchaseLogBuilder(target: string, item: string, amount: number, price: number) {
-  const message = `Jogador: <@${target}>\nCompra: ${amount}x ${item}\nValor: ${price} PO`;
+export function purchaseLogBuilder(target: string, character: Character, item: string, amount: number, price: number) {
+  const message = `Jogador: <@${target}>\nPersonagem: ${character.name}\nCompra: ${amount}x ${item}\nValor: ${price} PO`;
 
   return message;
 }
 
-export function vendingLogBuilder(target: string, item: string, amount: number, price: number) {
-  const message = `Jogador: <@${target}>\nVender: ${amount}x ${item}\nValor: ${price} PO`;
+export function vendingLogBuilder(target: string, character: Character, item: string, amount: number, price: number) {
+  const message = `Jogador: <@${target}>\nPersonagem: ${character.name}\nVende: ${amount}x ${item}\nValor: ${price} PO`;
 
   return message;
 }

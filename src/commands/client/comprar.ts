@@ -1,6 +1,6 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
+import { Log, Sanitizer } from '../../lib/classes';
 import { goldLogBuilder, purchaseLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 
@@ -8,6 +8,13 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('comprar')
     .setDescription('Realiza compras de itens para o jogador.')
+    .addStringOption(option =>
+      option
+        .setName('personagem')
+        .setDescription('Nome do personagem que receberá o item')
+        .setRequired(true)
+        .setAutocomplete(true)
+    )
     .addStringOption(option =>
       option
         .setName('item')
@@ -33,6 +40,8 @@ module.exports = {
 
     const author = interaction.user!.id;
     const player = await loadPlayer(author);
+    const characterInput = interaction.options.getString('personagem')!;
+    const { key: characterKey } = Sanitizer.character(characterInput);
     const item = interaction.options.getString('item')!;
     const amount = interaction.options.getInteger('quantidade')!;
     const price = interaction.options.getInteger('preço')! * amount;
@@ -44,12 +53,19 @@ module.exports = {
       return;
     }
 
+    const character = player.characters[characterKey];
+
+    if (!character) {
+      await interaction.editReply('Personagem não encontrado! Utilize o comando `/listar` para ver seus personagens.');
+      return;
+    }
+
     if (player.gold < price) {
       await interaction.editReply('Ouro insuficiente!');
       return;
     }
 
-    const purchaseLog = new Log('purchase', author, purchaseChannel.id, purchaseLogBuilder(author, item, amount, price));
+    const purchaseLog = new Log('purchase', author, purchaseChannel.id, purchaseLogBuilder(author, character, item, amount, price));
 
     try {
       const purchaseMessage = await purchaseChannel.send(purchaseLog.content);

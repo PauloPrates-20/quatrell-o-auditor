@@ -1,6 +1,6 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
+import { Log, Sanitizer } from '../../lib/classes';
 import { goldLogBuilder, vendingLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 
@@ -8,6 +8,13 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('vender')
     .setDescription('Realiza vendas de itens para o jogador.')
+    .addStringOption(option =>
+      option
+        .setName('personagem')
+        .setDescription('Nome do personagem que receberá o item')
+        .setRequired(true)
+        .setAutocomplete(true)
+    )
     .addStringOption(option =>
       option
         .setName('item')
@@ -33,6 +40,8 @@ module.exports = {
 
     const author = interaction.user!.id;
     const player = await loadPlayer(author);
+    const characterInput = interaction.options.getString('personagem')!;
+    const { key: characterKey } = Sanitizer.character(characterInput);
     const item = interaction.options.getString('item')!;
     const amount = interaction.options.getInteger('quantidade')!;
     const price = Math.floor(interaction.options.getInteger('preço')! * amount / 2);
@@ -44,12 +53,19 @@ module.exports = {
       return;
     }
 
-    const vendingLog = new Log('vending', author, vendingChannel.id, vendingLogBuilder(author, item, amount, price));
+    const character = player.characters[characterKey];
+
+    if (!character) {
+      await interaction.editReply('Personagem não encontrado! Utilize o comando `/listar` para ver seus personagens.');
+      return;
+    }
+
+    const vendingLog = new Log('vending', author, vendingChannel.id, vendingLogBuilder(author, character, item, amount, price));
 
     try {
       const vendingMessage = await vendingChannel.send(vendingLog.content);
       await registerLog(vendingLog, author);
-      
+
       player.addGold(price);
       const goldLog = new Log('gold', author, bankChannel.id, goldLogBuilder(player, 'deposita', price, vendingMessage.url));
 
