@@ -1,11 +1,19 @@
 // dotenv configuration
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 const env = process.env.NODE_ENV || 'development'
 const envPath = path.resolve(process.cwd(), `.env.${env}`);
 
-dotenv.config({ path: envPath });
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+
+const defaultEnvPath = path.resolve(process.cwd(), `.env`);
+if (fs.existsSync(defaultEnvPath)) {
+  dotenv.config({ path: defaultEnvPath });
+}
 
 const {
   DISCORD_TOKEN,
