@@ -5,10 +5,10 @@
   "main": "main.js",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
-    "start": "node dist/main.js",
-    "build": "tsup src/**/*.ts",
-    "register": "tsx src/deploy-commands.ts"
+    "start": "cross-env NODE_ENV=production node dist/main.js",
+    "build": "cross-env NODE_ENV=production tsup src/**/*.ts",
+    "register:dev": "cross-env NODE_ENV=development tsx src/deploy-commands.ts",
+    "register:prod": "cross-env NODE_ENV=production tsx src/deploy-commands.ts"
   },
   "author": "",
   "license": "ISC",
