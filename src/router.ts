@@ -18,7 +18,7 @@ export default router
     }
 
     const response = await fetch('https://discord.com/api/oauth2/@me', {
-      headers: { 'Authorization': `Bearer ${req.body.accessToken}`}
+      headers: { 'Authorization': `Bearer ${req.body.accessToken}` }
     });
     const data = await response.json();
 
@@ -29,7 +29,6 @@ export default router
 
     const playerId = data.user.id;
     const user = await client.users.fetch(playerId);
-    console.log(playerId);
 
     if (!user) {
       res.status(404).json({ error: 'Player not found!' });
@@ -43,6 +42,13 @@ export default router
       return;
     }
 
+    const characterName = player.characters[character]?.name;
+
+    if (!characterName) {
+      res.status(404).json({ error: 'Personagem não encontrado! Utilize o comando `/personagem adicionar` para criar o personagem.'} );
+      return;
+    }
+
     if (player.gold < item.price) {
       res.status(400).json({ error: 'Ouro insuficiente!' });
       return;
@@ -51,21 +57,21 @@ export default router
     try {
       const purchaseChannel = client.channels.cache.get(channels.shop!) as TextChannel;
       const bankChannel = client.channels.cache.get(channels.bank!) as TextChannel;
-      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, character.name, item.name, 1, item.value));
+      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, characterName, item.name, 1, item.value));
       const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
-      
+
       player.subGold(item.value);
       const goldLog = new Log('gold', playerId, bankChannel.id, goldLogBuilder(player, 'retira', item.value, purchaseMessage.url));
 
-      Promise.all([
+      await Promise.all([
         bankChannel.send(goldLog.content),
         updatePlayer(player),
         registerLog(goldLog, playerId),
         registerLog(purchaseLog, playerId)
       ]);
+
+      res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
     } catch (error) {
       res.status(500).json({ error: 'Não foi possível concluir a compra!', details: error });
     }
-
-    res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
   })

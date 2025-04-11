@@ -39,7 +39,17 @@ var import_discord = require("discord.js");
 
 // src/config.ts
 var import_dotenv = __toESM(require("dotenv"));
-import_dotenv.default.config();
+var import_path = __toESM(require("path"));
+var import_fs = __toESM(require("fs"));
+var env = process.env.NODE_ENV || "development";
+var envPath = import_path.default.resolve(process.cwd(), `.env.${env}`);
+if (import_fs.default.existsSync(envPath)) {
+  import_dotenv.default.config({ path: envPath });
+}
+var defaultEnvPath = import_path.default.resolve(process.cwd(), `.env`);
+if (import_fs.default.existsSync(defaultEnvPath)) {
+  import_dotenv.default.config({ path: defaultEnvPath });
+}
 var {
   DISCORD_TOKEN,
   DISCORD_CLIENT_ID,
@@ -257,8 +267,9 @@ Ouro Total: ${player.gold} PO
 Origem: ${source}`;
   return message;
 }
-function purchaseLogBuilder(target, item, amount, price) {
+function purchaseLogBuilder(target, character, item, amount, price) {
   const message = `Jogador: <@${target}>
+Personagem: ${character}
 Compra: ${amount}x ${item}
 Valor: ${price} PO`;
   return message;
@@ -267,9 +278,8 @@ Valor: ${price} PO`;
 // src/router.ts
 var router = (0, import_express.Router)();
 var router_default = router.post("/buy", async (req, res) => {
-  const { accessToken, item } = req.body;
-  console.log(accessToken, item);
-  if (!(accessToken || item)) {
+  const { accessToken, item, character } = req.body;
+  if (!(accessToken || item || character)) {
     res.status(400).json({ error: "Missing required fields!" });
     return;
   }
@@ -283,7 +293,6 @@ var router_default = router.post("/buy", async (req, res) => {
   }
   const playerId = data.user.id;
   const user = await client.users.fetch(playerId);
-  console.log(playerId);
   if (!user) {
     res.status(404).json({ error: "Player not found!" });
     return;
@@ -293,6 +302,11 @@ var router_default = router.post("/buy", async (req, res) => {
     res.status(404).json({ error: "Jogador n\xE3o encontrado! Utilize o comando `/registrar` para se cadastrar." });
     return;
   }
+  const characterName = player.characters[character]?.name;
+  if (!characterName) {
+    res.status(404).json({ error: "Personagem n\xE3o encontrado! Utilize o comando `/personagem adicionar` para criar o personagem." });
+    return;
+  }
   if (player.gold < item.price) {
     res.status(400).json({ error: "Ouro insuficiente!" });
     return;
@@ -300,20 +314,20 @@ var router_default = router.post("/buy", async (req, res) => {
   try {
     const purchaseChannel = client.channels.cache.get(channels.shop);
     const bankChannel = client.channels.cache.get(channels.bank);
-    const purchaseLog = new Log("purchase", playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, item.name, 1, item.value));
+    const purchaseLog = new Log("purchase", playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, characterName, item.name, 1, item.value));
     const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
     player.subGold(item.value);
     const goldLog = new Log("gold", playerId, bankChannel.id, goldLogBuilder(player, "retira", item.value, purchaseMessage.url));
-    Promise.all([
+    await Promise.all([
       bankChannel.send(goldLog.content),
       updatePlayer(player),
       registerLog(goldLog, playerId),
       registerLog(purchaseLog, playerId)
     ]);
+    res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
   } catch (error) {
     res.status(500).json({ error: "N\xE3o foi poss\xEDvel concluir a compra!", details: error });
   }
-  res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
 });
 
 // src/main.ts
@@ -352,7 +366,7 @@ client.once(import_discord.Events.ClientReady, (readyClient) => {
 client.on(import_discord.Events.InteractionCreate, async (interaction) => {
   if (interaction.isAutocomplete()) {
     const command2 = client.commands.get(interaction.commandName);
-    if (command2.data.name === "personagem" || command2.data.name === "corrigir" && interaction.options.getSubcommand() === "xp") {
+    if (command2.data.name === "personagem" || command2.data.name === "corrigir" && interaction.options.getSubcommand() === "xp" || command2.data.name === "comprar" || command2.data.name === "vender") {
       const player = await loadPlayer(interaction.member.id);
       if (!player) {
         await interaction.respond([]);

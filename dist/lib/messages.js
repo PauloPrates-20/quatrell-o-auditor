@@ -70,15 +70,17 @@ Transfere: ${amount} ${currencyText}
 Para: <@${targets[1]}>`;
   return message;
 }
-function purchaseLogBuilder(target, item, amount, price) {
+function purchaseLogBuilder(target, character, item, amount, price) {
   const message = `Jogador: <@${target}>
+Personagem: ${character}
 Compra: ${amount}x ${item}
 Valor: ${price} PO`;
   return message;
 }
-function vendingLogBuilder(target, item, amount, price) {
+function vendingLogBuilder(target, character, item, amount, price) {
   const message = `Jogador: <@${target}>
-Vender: ${amount}x ${item}
+Personagem: ${character.name}
+Vende: ${amount}x ${item}
 Valor: ${price} PO`;
   return message;
 }

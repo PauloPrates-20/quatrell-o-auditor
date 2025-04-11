@@ -43,8 +43,8 @@ export function transferencyLogBuilder(type: string, targets: string[], amount: 
   return message;
 }
 
-export function purchaseLogBuilder(target: string, character: Character, item: string, amount: number, price: number) {
-  const message = `Jogador: <@${target}>\nPersonagem: ${character.name}\nCompra: ${amount}x ${item}\nValor: ${price} PO`;
+export function purchaseLogBuilder(target: string, character: string, item: string, amount: number, price: number) {
+  const message = `Jogador: <@${target}>\nPersonagem: ${character}\nCompra: ${amount}x ${item}\nValor: ${price} PO`;
 
   return message;
 }

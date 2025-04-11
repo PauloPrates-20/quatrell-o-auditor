@@ -42,7 +42,17 @@ var import_firestore = require("firebase/firestore");
 
 // src/config.ts
 var import_dotenv = __toESM(require("dotenv"));
-import_dotenv.default.config();
+var import_path = __toESM(require("path"));
+var import_fs = __toESM(require("fs"));
+var env = process.env.NODE_ENV || "development";
+var envPath = import_path.default.resolve(process.cwd(), `.env.${env}`);
+if (import_fs.default.existsSync(envPath)) {
+  import_dotenv.default.config({ path: envPath });
+}
+var defaultEnvPath = import_path.default.resolve(process.cwd(), `.env`);
+if (import_fs.default.existsSync(defaultEnvPath)) {
+  import_dotenv.default.config({ path: defaultEnvPath });
+}
 var {
   DISCORD_TOKEN,
   DISCORD_CLIENT_ID,

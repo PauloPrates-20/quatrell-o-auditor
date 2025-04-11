@@ -1,10 +1,11 @@
 {
   "name": "terrasagrada-utility-bot",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Um bot simples para automatizar algumas tarefas do servidor de rpg Terra Sagrada",
   "main": "main.js",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only src/main.ts",
     "start": "cross-env NODE_ENV=production node dist/main.js",
     "build": "cross-env NODE_ENV=production tsup src/**/*.ts",
     "register:dev": "cross-env NODE_ENV=development tsx src/deploy-commands.ts",

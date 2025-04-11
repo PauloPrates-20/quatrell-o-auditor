@@ -31,7 +31,17 @@ var import_firestore = require("firebase/firestore");
 
 // src/config.ts
 var import_dotenv = __toESM(require("dotenv"));
-import_dotenv.default.config();
+var import_path = __toESM(require("path"));
+var import_fs = __toESM(require("fs"));
+var env = process.env.NODE_ENV || "development";
+var envPath = import_path.default.resolve(process.cwd(), `.env.${env}`);
+if (import_fs.default.existsSync(envPath)) {
+  import_dotenv.default.config({ path: envPath });
+}
+var defaultEnvPath = import_path.default.resolve(process.cwd(), `.env`);
+if (import_fs.default.existsSync(defaultEnvPath)) {
+  import_dotenv.default.config({ path: defaultEnvPath });
+}
 var {
   DISCORD_TOKEN,
   DISCORD_CLIENT_ID,
@@ -186,6 +196,21 @@ var Log = class {
     this.content = content;
   }
 };
+var Sanitizer = class {
+  static character(input) {
+    const name = input.trim().replace(/\s{2,}/g, " ");
+    const key = name.replace(/\s/g, "_").normalize("NFD").replace(/\W/g, "").toLowerCase();
+    return { name, key };
+  }
+  static urlComponents(url) {
+    const components = url.match(/\d{18,}/g);
+    const [guildId, channelId, messageId] = components;
+    return [guildId, channelId, messageId];
+  }
+  static gemType(input) {
+    return input.normalize("NFD").replace(/\W/g, "").toLowerCase();
+  }
+};
 
 // src/lib/firebase/firestoreQuerys.ts
 var app = (0, import_app.initializeApp)(firebaseConfig);
@@ -238,8 +263,9 @@ Ouro Total: ${player.gold} PO
 Origem: ${source}`;
   return message;
 }
-function purchaseLogBuilder(target, item, amount, price) {
+function purchaseLogBuilder(target, character, item, amount, price) {
   const message = `Jogador: <@${target}>
+Personagem: ${character}
 Compra: ${amount}x ${item}
 Valor: ${price} PO`;
   return message;
@@ -248,6 +274,8 @@ Valor: ${price} PO`;
 // src/commands/client/comprar.ts
 module.exports = {
   data: new import_discord.SlashCommandBuilder().setName("comprar").setDescription("Realiza compras de itens para o jogador.").addStringOption(
+    (option) => option.setName("personagem").setDescription("Nome do personagem que receber\xE1 o item").setRequired(true).setAutocomplete(true)
+  ).addStringOption(
     (option) => option.setName("item").setDescription("Nome do item").setRequired(true)
   ).addIntegerOption(
     (option) => option.setName("quantidade").setDescription("Quantidade de items a comprar").setMinValue(1).setRequired(true)
@@ -258,6 +286,8 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
     const author = interaction.user.id;
     const player = await loadPlayer(author);
+    const characterInput = interaction.options.getString("personagem");
+    const { key: characterKey } = Sanitizer.character(characterInput);
     const item = interaction.options.getString("item");
     const amount = interaction.options.getInteger("quantidade");
     const price = interaction.options.getInteger("pre\xE7o") * amount;
@@ -267,11 +297,16 @@ module.exports = {
       await interaction.editReply("Jogador n\xE3o encontrado! Utilize o comando `/registrar` para se cadastrar.");
       return;
     }
+    const character = player.characters[characterKey];
+    if (!character) {
+      await interaction.editReply("Personagem n\xE3o encontrado! Utilize o comando `/listar` para ver seus personagens.");
+      return;
+    }
     if (player.gold < price) {
       await interaction.editReply("Ouro insuficiente!");
       return;
     }
-    const purchaseLog = new Log("purchase", author, purchaseChannel.id, purchaseLogBuilder(author, item, amount, price));
+    const purchaseLog = new Log("purchase", author, purchaseChannel.id, purchaseLogBuilder(author, character, item, amount, price));
     try {
       const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
       await registerLog(purchaseLog, author);
