@@ -78,7 +78,12 @@ module.exports = {
 
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-      player.addGold(amount);
+      if (amount < 0){
+        await interaction.editReply('Valor de inválido.');
+        return;
+      }else {
+        player.addGold(amount);
+      }
 
       const goldLog = new Log('ouro', author, bankChannel.id, goldLogBuilder(player, 'deposita', amount, source!));
 

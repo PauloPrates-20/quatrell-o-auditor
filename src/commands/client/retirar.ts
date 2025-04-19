@@ -1,5 +1,5 @@
 /* Imports */
-import { TextChannel, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
+import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
 import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
@@ -82,8 +82,12 @@ module.exports = {
         await interaction.editReply('Ouro insuficiente.');
         return;
       }
-
-      player.subGold(amount);
+      if (amount < 0){
+        await interaction.editReply('Valor de inválido.');
+        return;
+      }else {
+        player.subGold(amount);
+      }
 
       const goldLog = new Log('ouro', author.toString(), bankChannel.id, goldLogBuilder(player, 'retira', amount, source));
 
