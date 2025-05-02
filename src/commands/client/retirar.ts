@@ -1,12 +1,9 @@
 /* Imports */
-import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
-import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
-import { sourceValidation } from '../../lib/validation';
-import { channels } from '../../config';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 import { Gems } from '../../lib/definitions';
-import { GemTypes } from '../../lib/tables';
+import { BankController, TreasureController } from '../../lib/controllers/currency';
+import { Validator } from '../../lib/controllers/validator';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -65,61 +62,23 @@ module.exports = {
     const player = await loadPlayer(author);
     const amount = (interaction.options.getInteger('ouro') ?? interaction.options.getInteger('gemas'))!
 
-    if (!sourceValidation(source)) {
-      await interaction.editReply('Origem inválida.');
-      return;
-    }
+    const valid = await Validator.inputs(
+      [
+        { type: 'player', value: player },
+        { type: 'source', value: source },
+        { type: 'currency', value: amount },
+      ],
+      interaction
+    );
 
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
-      return;
-    }
+    if (!valid) return;
 
     if (subcommand === 'ouro') {
-      const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-
-      if (player.gold < amount) {
-        await interaction.editReply('Ouro insuficiente.');
-        return;
-      }
-      if (amount < 0){
-        await interaction.editReply('Valor de inválido.');
-        return;
-      }else {
-        player.subGold(amount);
-      }
-
-      const goldLog = new Log('ouro', author.toString(), bankChannel.id, goldLogBuilder(player, 'retira', amount, source));
-
-      try {
-        await updatePlayer(player);
-        await registerLog(goldLog, author);
-        bankChannel.send(goldLog.content);
-        await interaction.editReply(`${amount} PO retirados com sucesso.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao retirar ouro: ${error}`);
-      }
+      await BankController.withdraw(player!, amount, source, interaction)
     } else if (subcommand === 'gema') {
-      const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel
-      const type = interaction.options.getString('tipo') as keyof Gems;
+      const key = interaction.options.getString('tipo') as keyof Gems;
 
-      if (player.gems[type] < amount) {
-        await interaction.editReply('Gemas insuficientes.');
-        return;
-      }
-
-      player.subGems(type, amount);
-
-      const gemLog = new Log('gema', author.toString(), treasureChannel.id, gemLogBuilder(player, type, amount, 'retira', source));
-
-      try {
-        await updatePlayer(player);
-        await registerLog(gemLog, author);
-        treasureChannel.send(gemLog.content);
-        await interaction.editReply(`${amount} Gema(s) ${GemTypes[type]} retirada(s) com sucesso.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao retirar gemas: ${error}`);
-      }
+      await TreasureController.withdraw(player!, amount, key, source, interaction);
     }
   },
 };

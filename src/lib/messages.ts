@@ -1,5 +1,6 @@
-import { Character, Player } from './classes';
-import { Gems, Actions } from './definitions';
+import { Player } from './classes/player';
+import { Character } from './classes/character';
+import { Gems, Actions, CharacterDef } from './definitions';
 
 // Builds the messages used for the logs in the channel #banco
 export function goldLogBuilder(player: Player, action: Actions, amount: number, source: string) {
@@ -10,8 +11,7 @@ export function goldLogBuilder(player: Player, action: Actions, amount: number, 
 }
 
 // Builds the messages used for the logs in the channel #fonte-da-experiência
-export function xpLogBuilder(player: Player, characterKey: string, amount: number, source: string) {
-  const character = player.characters[characterKey];
+export function xpLogBuilder(player: Player, character: CharacterDef, amount: number, source: string) {
   const message = `Jogador: <@${player.id}>\nPersonagem: ${character.name}\nGanho de Experiência: ${amount} XP\nExperiência Acumulada: ${character.xp} XP\nNível Atual: ${character.level}\nTier Atual: ${character.tier}\nOrigem: ${source}`;
 
   return message;

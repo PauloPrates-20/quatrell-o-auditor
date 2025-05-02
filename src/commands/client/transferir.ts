@@ -1,11 +1,12 @@
 /* Imports */
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
+import { Log } from '../../lib/classes/log';
 import { goldLogBuilder, gemLogBuilder, transferencyLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
+import { Validator } from '../../lib/controllers/validator';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -68,23 +69,22 @@ module.exports = {
       return;
     }
 
-    const transferencyChannel = interaction.client.channels.cache.get(channels.transferencies!) as TextChannel;
     const [authorPlayer, targetPlayer] = await Promise.all([loadPlayer(author), loadPlayer(target)]);
     const subcommand = interaction.options.getSubcommand();
 
-    if (!authorPlayer) {
-      await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
-      return;
-    }
-    if (!targetPlayer) {
-      await interaction.editReply('Jogador alvo não encontado.');
-      return;
-    }
+    const valid = await Validator.inputs(
+      [
+        { type: 'player', value: authorPlayer },
+        { type: 'player', value: targetPlayer },
+        { type: 'currency', value: amount },
+      ],
+      interaction
+    );
+
+    if (!valid) return false;
 
     if (subcommand === 'ouro') {
-      const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-
-      if (authorPlayer.gold < amount) {
+      if (authorPlayer!.gold < amount) {
         await interaction.editReply('Ouro insuficiente.');
         return;
       }

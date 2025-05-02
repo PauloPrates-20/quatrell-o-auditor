@@ -11,12 +11,10 @@ export interface Gems {
 };
 
 export interface CharacterDef {
-  [characterName: string]: {
-    name: string;
-    xp: number;
-    level: number;
-    tier: string;
-  };
+  name: string;
+  xp: number;
+  level: number;
+  tier: string;
 };
 
 export type Actions = 'deposita' | 'retira';
