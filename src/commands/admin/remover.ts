@@ -1,6 +1,7 @@
 /* Imports */
-import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction } from 'discord.js';
 import { loadPlayer, deletePlayer } from '../../lib/firebase/firestoreQuerys';
+import { Validator } from '../../lib/controllers/validator';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,10 +19,9 @@ module.exports = {
     const target = interaction.options.getUser('jogador')!.id;
     const player = await loadPlayer(target);
 
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado.');
-      return;
-    }
+    const valid = await Validator.inputs([{ type: 'player', value: player }], interaction);
+
+    if (!valid) return;
 
     try {
       deletePlayer(target);

@@ -39,7 +39,7 @@ module.exports = {
         await deletePlayer(target);
         deleted = true;
       } catch (error) {
-        await interaction.editReply(`Falha do deletar dados do jgoador: ${error}`);
+        await interaction.editReply(`Falha do deletar dados do jogador: ${error}`);
       }
     }
 

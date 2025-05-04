@@ -1,10 +1,11 @@
 /* Imports */
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder, TextChannel } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Character, Log, Sanitizer } from '../../lib/classes';
+import { Character } from '../../lib/classes/character';
 import { sourceValidation } from '../../lib/validation';
 import { channels } from '../../config';
 import { xpLogBuilder } from '../../lib/messages';
+import { Validator } from '../../lib/controllers/validator';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -105,67 +106,56 @@ module.exports = {
     const author = interaction.user.id;
     const player = await loadPlayer(author);
     const subcommand = interaction.options.getSubcommand();
-    const { name, key } = Sanitizer.character(interaction.options.getString('personagem')!);
-    const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
+    const name = interaction.options.getString('personagem')!;
+    const channel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
 
-    if (!player) {
-      await interaction.editReply('Jogador não cadastrado. Utilize `/registrar` para se cadastrar.');
-      return;
-    }
-    if (/\d/.test(name.charAt(0))) {
-      await interaction.editReply('O nome do personagem não pode começar com números.');
-      return;
-    }
-    
+    const valid = Validator.inputs([{ type: 'player', value: player }], interaction);
+
+    if (!valid) return;
+
     if (subcommand === 'adicionar') {
       const character = new Character(name);
 
-      if (player.characters[key]) {
+      if (player!.getCharacter(name)) {
         await interaction.editReply('Já existe um personagem com este nome.');
         return;
       }
-      player.registerCharacter(character, key);
+      player!.appendCharacterList(character);
 
       try {
-        await updatePlayer(player);
+        await updatePlayer(player!);
         await interaction.editReply(`Personagem ${name} adicionado com sucesso.`);
       } catch (error) {
         await interaction.editReply(`Falha ao adicionar personagem: ${error}`);
       }
     } else if (subcommand === 'remover') {
-      if (!player.characters[key]) {
+      if (!player!.getCharacter(name)) {
         await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
         return;
       }
-      player.deleteCharacter(key);
+      player!.removeCharacter(name);
 
       try {
-        await updatePlayer(player);
+        await updatePlayer(player!);
         await interaction.editReply(`Personagem ${name} removido com sucesso.`);
-        xpChannel.send(`Personagem ${name} de <@${(interaction.member as GuildMember).id}> deletado.`);
+        channel.send(`Personagem ${name} de <@${(author)}> deletado.`);
       } catch (error) {
         await interaction.editReply(`Falha ao deletar personagem: ${error}`);
       }
     } else if (subcommand === 'renomear') {
-      const {name: newName, key: newKey } = Sanitizer.character(interaction.options.getString('nome')!);
+      const newName = interaction.options.getString('nome')!;
 
-      if (/\d/.test(newName.charAt(0))) {
-        await interaction.editReply('O nome do personagem não pode começar com números.');
-        return;
-      }
-
-      if (!player.characters[key]) {
+      if (!player!.getCharacter(name)) {
         await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
         return;
       }
 
-      if (player.characters[newKey]) {
+      if (player!.getCharacter(newName)) {
         await interaction.editReply('Já existe um personagem com este nome.');
         return;
       }
 
-      const oldName = player.characters[key].name;
-      player.renameCharacter(key, newKey, newName);
+      const oldName = player!.getCharacter(name)!.name;
 
       try {
         await updatePlayer(player);
