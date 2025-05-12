@@ -1,9 +1,10 @@
 /* Imports */
-import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction } from 'discord.js';
-import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
-import { CharacterDef, Gems } from '../../lib/definitions';
-import { Validator } from '../../lib/controllers/validator';
-import { BankController, TreasureController, XpController } from '../../lib/controllers/currency';
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, TextChannel } from 'discord.js';
+import { loadPlayer, updatePlayer } from '../../lib/firebase/firestoreQuerys';
+import { channels } from '../../config';
+import { Gems } from '../../lib/definitions';
+import { GemTypes } from '../../lib/tables';
+import { Sanitizer } from '../../lib/classes';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -91,34 +92,76 @@ module.exports = {
       interaction.options.getInteger('gemas') ?? 
       interaction.options.getInteger('xp')
     )!;
-    const characterName = interaction.options.getString('personagem');
-    const character = player?.characters?.find((char) => char.name === characterName);
+    const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
+    const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
+    const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
 
-    const valid = await Validator.inputs(
-      [
-        { type: 'player', value: player },
-        { type: 'currency', value: amount },
-        { type: 'character', value: character },
-      ],
-      interaction
-    );
-
-    if (!valid) return;
+    if (!player) {
+      await interaction.editReply('Jogador não encontrado.');
+      return;
+    }
 
     if (subcommand === 'ouro') {
-      BankController.setGold(author, player!, amount, interaction);
+      if (amount < 0) {
+        await interaction.editReply('Valor não pode ser menor que 0.');
+        return;
+      }
+
+      player.gold = amount;
+
+      try {
+        await updatePlayer(player);
+        await interaction.editReply('Ajuste realizado com sucesso.');
+        bankChannel.send(`Ouro de <@${target}> ajustado para ${amount} PO por <@${author}>.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
+      }
     } else if (subcommand === 'gema') {
-      const key = interaction.options.getString('tipo') as keyof Gems;
+      const gemType = interaction.options.getString('tipo') as keyof Gems;
 
-      TreasureController.setGems(author, player!, amount, key, interaction);
+      if (amount < 0) {
+        await interaction.editReply('Valor não pode ser menor que 0.');
+        return;
+      }
+
+      player.gems[gemType] = amount;
+
+      try {
+        await updatePlayer(player);
+        await interaction.editReply('Ajuste realizado com sucesso.');
+        treasureChannel.send(`Gemas ${GemTypes[gemType]} de <@${target}> ajustadas para ${amount} por <@${author}>.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
+      }
     } else if (subcommand === 'xp') {
-      const character = player!.getCharacter(interaction.options.getString('personagem')!);
+      const { name, key } = Sanitizer.character(interaction.options.getString('personagem')!);
 
-      const isValid = Validator.inputs([ { type: 'character', value: character }], interaction);
+      if (/\d/.test(name.charAt(0))) {
+        await interaction.editReply('O nome do personagem não pode começar com números.');
+        return;
+      }
 
-      if (!isValid) return;
+      const character = player.characters[key];
 
-      XpController.setXp(author, player!, amount, character as CharacterDef, interaction);
+      if (amount < 0) {
+        await interaction.editReply('Valor não pode ser menor que 0.');
+        return;
+      }
+
+      if (!character) {
+        await interaction.editReply('Personagem não encontrado.');
+        return;
+      }
+
+      player.setXp(key, amount);
+
+      try {
+        await updatePlayer(player);
+        await interaction.editReply('Ajuste realizado com sucesso.');
+        xpChannel.send(`XP do personagem ${character.name} de <@${target}> ajustado para ${amount} XP por <@${author}>.`);
+      } catch (error) {
+        await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
+      }
     }
   },
 };

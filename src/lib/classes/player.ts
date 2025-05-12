@@ -33,12 +33,8 @@ export class Player {
     this.characters.push(character);
   }
 
-  removeCharacter(name: string) {
+  removeCharacterList(name: string) {
     this.characters = this.characters.filter((char) => char.name !== name);
-  }
-
-  updateCharacter(character: CharacterDef) {
-    this.characters[this.characters.findIndex(char => char.name === character.name)] = { ...character }; 
   }
 
   getCharacter(name: string) {
