@@ -2,8 +2,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, collection, getDoc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { collections } from '../../config';
-import { Player } from '../classes/player';
-import { Log } from '../classes/log';
+import { Player, Log } from '../classes';
 import { firebaseConfig } from '../../config';
 
 const app = initializeApp(firebaseConfig);
@@ -54,7 +53,7 @@ export async function loadPlayer(playerId: string): Promise<Player | undefined> 
     if (data) {
       return new Player(data.id, data.gold, data.gems, data.characters);
     } else {
-      return undefined
+      throw new Error('Player not found');
     }
 	} catch (error: any) {
 		console.error(error.message);

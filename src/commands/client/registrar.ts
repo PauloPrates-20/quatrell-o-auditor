@@ -1,7 +1,7 @@
 /* Imports */
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, registerPlayer } from '../../lib/firebase/firestoreQuerys';
-import { Player } from '../../lib/classes/player';
+import { Player } from '../../lib/classes';
 
 module.exports = {
 	data: new SlashCommandBuilder()
