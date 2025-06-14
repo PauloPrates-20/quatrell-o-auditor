@@ -2,7 +2,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, collection, getDoc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { collections } from '../../config';
-import { Player, Log } from '../classes';
+import { Player } from '../classes';
 import { firebaseConfig } from '../../config';
 
 const app = initializeApp(firebaseConfig);
@@ -14,30 +14,30 @@ const db = getFirestore(app);
 export async function registerPlayer(playerData: Player) {
 	// Sets doc reference and convert the data to firestore Map
 	const ref = doc(db, collections.users!, playerData.id);
-	const convertedPlayer = Object.assign({}, playerData);
+	const convertedPlayer = playerData.toObject();
 
 	try {
 		await setDoc(ref, convertedPlayer);
 
 		console.log(`Player ${playerData.id} registered successfuly.`);
-	} catch (error) {
-		console.error(`Error registering player: ${error}`);
+	} catch (e) {
+		console.error(`[ERROR] Unable to register player: ${e}`);
 	}
 }
 
 // Log register function
-export async function registerLog(logData: Log, playerId: string) {
+export async function registerLog(logData: string, playerId: string) {
 	const ref = collection(db, collections.users!, playerId.toString(), 'logs');
 	const convertedLog = {
-		...logData,
+		content: logData,
 		timestamp: serverTimestamp(),
 	};
 
 	try {
 		await addDoc(ref, convertedLog);
 		console.log(`Log registered succesfully for player ${playerId}.`);
-	} catch (error) {
-		console.error(`Error registering log: ${error}`);
+	} catch (e) {
+		console.error(`[ERROR] Unable to register log: ${e}`);
 	}
 }
 
@@ -51,12 +51,12 @@ export async function loadPlayer(playerId: string): Promise<Player | undefined> 
 		const data = querySnapshot.data();
 
     if (data) {
-      return new Player(data.id, data.gold, data.gems, data.characters);
+      return Player.fromObject(data as Player);
     } else {
       throw new Error('Player not found');
     }
-	} catch (error: any) {
-		console.error(error.message);
+	} catch (e) {
+		console.error(`[ERROR] Unable to load player: ${e}`);
 	}
 }
 
@@ -64,7 +64,7 @@ export async function loadPlayer(playerId: string): Promise<Player | undefined> 
 export async function updatePlayer(playerData: Player) {
 	const ref = doc(db, collections.users!, playerData.id);
 
-	const data: any = Object.assign({}, playerData);
+	const data: any = playerData.toObject();
 	delete data.id;
 
 	try {
@@ -72,7 +72,7 @@ export async function updatePlayer(playerData: Player) {
 
 		console.log(`Player ${playerData.id} updated successfuly`);
 	} catch (error) {
-		console.error(`Unable to update player ${playerData.id}: ${error}`);
+		console.error(`[ERROR] Unable to update player ${playerData.id}: ${error}`);
 	}
 }
 
@@ -84,6 +84,6 @@ export async function deletePlayer(playerId: string) {
 
 		console.log(`Player ${playerId} deleted successfully.`);
 	} catch (error) {
-		console.error(`Failed to delete player ${playerId}: ${error}`);
+		console.error(`[ERROR] Failed to delete player ${playerId}: ${error}`);
 	}
 }
