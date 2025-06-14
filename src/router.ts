@@ -40,7 +40,7 @@ export default router
     const bankChannel = client.channels.cache.get(channels.bank) as TextChannel;
 
     try {
-      purchaseItem(player, character, item, 1, purchaseChannel, bankChannel);
+      await purchaseItem(player, character, item, 1, purchaseChannel, bankChannel);
       res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
     } catch (e: any) {
       res.status(500).json({ error: 'Não foi possível concluir a compra!', details: e.message });
