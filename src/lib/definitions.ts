@@ -10,13 +10,9 @@ export interface Gems {
   ressureicao: number;
 };
 
-export interface CharacterDef {
-  [characterName: string]: {
-    name: string;
-    xp: number;
-    level: number;
-    tier: string;
-  };
-};
+export interface Item {
+  name: string;
+  price: number;
+}
 
 export type Actions = 'deposita' | 'retira';
