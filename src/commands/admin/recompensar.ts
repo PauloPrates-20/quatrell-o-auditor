@@ -1,11 +1,11 @@
 /* Imports */
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember, BaseGuildTextChannel, TextChannel } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
-import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
+import { depositGold } from '../../lib/controllers/bank';
+import { depositGem } from '../../lib/controllers/treasure';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -65,8 +65,6 @@ module.exports = {
     const source = 'Recompensa por doação ao servidor.';
     const player = await loadPlayer(target);
     const amount = (interaction.options.getInteger('ouro') ?? interaction.options.getInteger('gemas'))!
-    const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-    const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
 
     if (!player) {
       await interaction.editReply('Jogador não encontrado.');
@@ -74,30 +72,24 @@ module.exports = {
     }
 
     if (subcommand === 'ouro') {
-      player.addGold(amount);
-
-      const log = new Log('ouro', target, bankChannel.id, goldLogBuilder(player, 'deposita', amount, source));
-
+      const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
       try {
-        await Promise.all([updatePlayer(player), registerLog(log, target)]);
-        bankChannel.send(log.content);
+        await depositGold(player, amount, source, bankChannel, true);
         await interaction.editReply(`${amount} PO depositados para <@${target}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao depositar recompensas: ${error}`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao recompensar ouro: ${e}`);
+        await interaction.editReply(`Falha ao depositar recompensas: ${e.message}`);
       }
     } else if (subcommand === 'gema') {
-      const gemType = interaction.options.getString('tipo') as keyof Gems;
-
-      player.addGems(gemType, amount);
-
-      const log = new Log('gema', target, treasureChannel.id, gemLogBuilder(player, gemType, amount, 'deposita', source));
+      const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
+      const type = interaction.options.getString('tipo') as keyof Gems;
 
       try {
-        await Promise.all([updatePlayer(player), registerLog(log, target)]);
-        treasureChannel.send(log.content);
-        await interaction.editReply(`${amount} Gema(s) ${GemTypes[gemType]} depositadas para <@${target}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao depositar recompensas: ${error}`);
+        await depositGem(player, type, amount, source, treasureChannel, true);
+        await interaction.editReply(`${amount}x Gema ${GemTypes[type]} depositada(s) para <@${target}>.`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao recompensar gemas: ${e}`)
+        await interaction.editReply(`Falha ao depositar recompensas: ${e.message}`);
       }
     }
   },
