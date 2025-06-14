@@ -81,8 +81,7 @@ client.on(Events.InteractionCreate, async interaction => {
 			const focusedOption = interaction.options.getFocused(true);
 
 			if (focusedOption.name === 'personagem') {
-				const choices = Object.keys(player.characters).map(key => {
-					const character = player.characters[key];
+				const choices =player.characters.map(character => {
 					return {
 						// What the player sees
 						name: character.name,
@@ -103,7 +102,7 @@ client.on(Events.InteractionCreate, async interaction => {
 			if (focusedOption.name === 'personagem') {
 				const options = interaction.options.data[0]?.options || [];
 				const jogadorOption = options.find(option => option.name === 'jogador');
-				const target = jogadorOption!.value;
+				const target = jogadorOption?.value;
 				console.log('Target member: ', target);
 
 				if (!target) {
@@ -120,8 +119,7 @@ client.on(Events.InteractionCreate, async interaction => {
 					return;
 				}
 
-				const choices = Object.keys(player.characters).map(key => {
-					const character = player.characters[key];
+				const choices = player.characters.map(character => {
 					return {
 						name: character.name,
 						value: character.name,

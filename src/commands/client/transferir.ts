@@ -1,11 +1,11 @@
 /* Imports */
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
-import { goldLogBuilder, gemLogBuilder, transferencyLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
+import { transferGold } from '../../lib/controllers/bank';
+import { transferGem } from '../../lib/controllers/treasure';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -72,84 +72,26 @@ module.exports = {
     const [authorPlayer, targetPlayer] = await Promise.all([loadPlayer(author), loadPlayer(target)]);
     const subcommand = interaction.options.getSubcommand();
 
-    if (!authorPlayer) {
-      await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
-      return;
-    }
-    if (!targetPlayer) {
-      await interaction.editReply('Jogador alvo não encontado.');
-      return;
-    }
-
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
 
-      if (authorPlayer.gold < amount) {
-        await interaction.editReply('Ouro insuficiente.');
-        return;
-      }
-
-      const transferencyLog = new Log('transferencia', [author, target], transferencyChannel.id, transferencyLogBuilder('ouro', [author, target], amount));
-      const sourceMessage = await transferencyChannel!.send(transferencyLog.content);
-      const source = sourceMessage.url;
-
-      authorPlayer.subGold(amount);
-      targetPlayer.addGold(amount);
-
-      const authorLog = new Log('ouro', author, bankChannel.id, goldLogBuilder(authorPlayer, 'retira', amount, source));
-      const targetLog = new Log('ouro', target, bankChannel.id, goldLogBuilder(targetPlayer, 'deposita', amount, source));
-
-      bankChannel.send(authorLog.content);
-      bankChannel.send(targetLog.content);
-
       try {
-        await Promise.all(
-          [
-            updatePlayer(authorPlayer),
-            registerLog(authorLog, author),
-            updatePlayer(targetPlayer),
-            registerLog(targetLog, target),
-          ],
-        );
+        await transferGold(authorPlayer, targetPlayer, amount, transferencyChannel, bankChannel)
         await interaction.editReply(`${amount} PO transferidos para <@${target}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao realizar transferência: ${error}`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao transferir ouro: ${e}`)
+        await interaction.editReply(`Falha ao realizar transferência: ${e.message}`);
       }
     } else if (subcommand === 'gema') {
-      const gemType = interaction.options.getString('tipo') as keyof Gems;
-      const amount = interaction.options.getInteger('gemas')!;
+      const type = interaction.options.getString('tipo') as keyof Gems;
       const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
 
-      if (authorPlayer.gems[gemType] < amount) {
-        await interaction.editReply('Gemas insuficientes');
-        return;
-      }
-
-      const transferencyLog = new Log('transferencia', [author, target], transferencyChannel.id, transferencyLogBuilder('gema', [author, target], amount, gemType));
-      const sourceMessage = await transferencyChannel.send(transferencyLog.content);
-      const source = sourceMessage.url;
-
-      authorPlayer.subGems(gemType, amount);
-      targetPlayer.addGems(gemType, amount);
-
-      const authorLog = new Log('gema', author, treasureChannel.id, gemLogBuilder(authorPlayer, gemType, amount, 'retira', source));
-      const targetLog = new Log('gema', target, treasureChannel.id, gemLogBuilder(targetPlayer, gemType, amount, 'deposita', source));
-
-      treasureChannel.send(authorLog.content);
-      treasureChannel.send(targetLog.content);
-
       try {
-        await Promise.all(
-          [
-            updatePlayer(authorPlayer),
-            registerLog(authorLog, author),
-            updatePlayer(targetPlayer),
-            registerLog(targetLog, target),
-          ],
-        );
-        await interaction.editReply(`${amount} Gema(s) ${GemTypes[gemType]} transferidas para <@${target}>.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao realizar transferência: ${error}`);
+        await transferGem(authorPlayer, targetPlayer, type, amount, transferencyChannel, treasureChannel);
+        await interaction.editReply(`${amount} Gema(s) ${GemTypes[type]} transferidas para <@${target}>.`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao transferir gemas: ${e}`);
+        await interaction.editReply(`Falha ao realizar transferência: ${e.message}`);
       }
     }
   },

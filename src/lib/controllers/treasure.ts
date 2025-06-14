@@ -1,36 +1,63 @@
 import { Player } from '../classes';
 import { TextChannel } from 'discord.js';
-import { assertPositive, playerValidation, sourceValidation } from '../validation';
-import { updatePlayer, registerLog } from '../firebase/firestoreQuerys';
+import { endTransaction } from '../utils';
+import { assertPositive, playerValidation, targetValidation, sourceValidation, enoughCurrencyValidation, runValidations } from '../validation';
 import { Gems } from '../definitions';
 import { GemTypes } from '../tables';
-import { gemLog } from '../messages';
+import { gemLog, transferencyLog } from '../messages';
 
-export async function depositGem(player: Player | undefined, type: keyof Gems, amount: number, source: string, channel: TextChannel, reward = false) {
+export async function depositGem(player: Player | undefined, type: keyof Gems, amount: number, source: string, channel: TextChannel, validateSource = true) {
   // Validation block
-  let validation = playerValidation(player);
-  validation = assertPositive(amount);
-  if (!reward) validation = sourceValidation(source);
-
-  if (typeof validation === 'string') throw new Error(validation);
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    validateSource ? sourceValidation(source) : true,
+  );
 
   player!.updateGold(amount);
   const log = gemLog(player!, type, 'deposita', amount, source);
 
-  await updatePlayer(player!);
-  await registerLog(log, player!.id);
-  await channel.send(`${amount} PO despositado(s) com sucesso!`);
+  await endTransaction(player!, log, channel);
+}
+
+export async function withdrawGem(player: Player | undefined, type: keyof Gems, amount: number, source: string, channel: TextChannel) {
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    sourceValidation(source),
+    enoughCurrencyValidation(player!.gold, amount),
+  );
+
+  player!.updateGems(type, -amount);
+  const log = gemLog(player!, type, 'retira', amount, source);
+
+  await endTransaction(player!, log, channel);
 }
 
 export async function setGem(author: string, player: Player | undefined, type: keyof Gems, amount: number, channel: TextChannel) {
   // validation block
-  let validation = playerValidation(player);
-  validation = assertPositive(amount);
-
-  if (typeof validation === 'string') throw new Error(validation);
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+  );
 
   player!.updateGems(type, amount, true);
 
-  await updatePlayer(player!);
-  await channel.send(`Gemas ${GemTypes[type]} de <@${player!.id}> ajustadas para ${amount} por <@${author}>!`);
+  await endTransaction(player!, `Gemas ${GemTypes[type]} de <@${player!.id}> ajustadas para ${amount} por <@${author}>!`, channel, false);
+}
+
+export async function transferGem(author: Player | undefined, target: Player | undefined, type: keyof Gems, amount: number, transferChannel: TextChannel, treasureChannel: TextChannel) {
+  // validation block
+  runValidations(
+    playerValidation(author),
+    targetValidation(target),
+    assertPositive(amount),
+    enoughCurrencyValidation(author!.gems[type], amount)
+  );
+
+  const transferLog = transferencyLog(author!.id, target!.id, 'gem', amount);
+  const source = (await transferChannel.send(transferLog)).url;
+
+  withdrawGem(author, type, amount, source, treasureChannel);
+  depositGem(target, type, amount, source, treasureChannel);
 }

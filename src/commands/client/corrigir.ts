@@ -1,10 +1,11 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel, Message } from 'discord.js'
 import { channels } from '../../config';
 import { sourceValidation } from '../../lib/validation';
-import { Log, Player, Sanitizer } from '../../lib/classes';
+import { Player } from '../../lib/classes';
 import { loadPlayer, registerLog, updatePlayer } from '../../lib/firebase/firestoreQuerys';
-import { gemLogBuilder, goldLogBuilder, xpLogBuilder } from '../../lib/messages';
 import { Actions, Gems } from '../../lib/definitions';
+import { getGemType, getUrlComponents } from '../../lib/utils';
+import { bankLog, gemLog, xpLog } from '../../lib/messages';
 
 async function fetchMessage(
   interaction: ChatInputCommandInteraction,
@@ -23,7 +24,7 @@ async function fetchMessage(
 async function applyCorrection(
   player: Player,
   author: string,
-  log: Log,
+  log: string,
   channel: TextChannel,
   messageUrl: string,
   message: Message,
@@ -32,7 +33,7 @@ async function applyCorrection(
   Promise.all([
     updatePlayer(player),
     registerLog(log, author),
-    channel.send(`Correção do lançamento ${messageUrl}\n\n` + log.content),
+    channel.send(`Correção do lançamento ${messageUrl}\n\n` + log),
     message.react('❌'),
     interaction.editReply('Lançamento corrigido com sucesso.'),
   ]);
@@ -164,9 +165,7 @@ module.exports = {
     let action = interaction.options.getString('ação');
     let source = interaction.options.getString('origem');
     let type = interaction.options.getString('tipo');
-    let character = interaction.options.getString('personagem');
-    let { name, key } = character ? Sanitizer.character(character) : { name: null, key: null };
-
+    let name = interaction.options.getString('personagem');
 
     if (!sourceValidation(messageUrl)) {
       await interaction.editReply('Mensagem inválida.');
@@ -188,12 +187,12 @@ module.exports = {
       return;
     }
 
-    if (key && !player.characters[key]) {
+    if (name && !player.getCharacter(name)) {
       await interaction.editReply('Personagem não encontrado. Utlize o comando `/listar` para conferir seus personagens.');
       return;
     }
 
-    const [messageGuild, messageChannel, messageId] = Sanitizer.urlComponents(messageUrl);
+    const [messageGuild, messageChannel, messageId] = getUrlComponents(messageUrl);
 
     if (messageGuild !== clientGuild) {
       await interaction.editReply('Mensagem inválida. Selecione uma mensagem neste servidor.');
@@ -231,46 +230,47 @@ module.exports = {
       if (originalAction === action) {
         if (originalAmount !== amount) {
           if (action === 'deposita') {
-            player.subGold(originalAmount);
-            player.addGold(amount);
+            player.updateGold(-originalAmount);
+            player.updateGold(amount);
           } else {
-            player.addGold(originalAmount);
+            player.updateGold(originalAmount);
 
             if (player.gold < amount) {
               await interaction.editReply('Ouro insuficiente.');
               return;
             }
 
-            player.subGold(amount);
+            player.updateGold(-amount);
           }
         }
       } else {
         if (action === 'deposita') {
-          player.addGold(originalAmount);
-          player.addGold(amount);
+          player.updateGold(originalAmount);
+          player.updateGold(amount);
         } else {
-          player.subGold(originalAmount);
+          player.updateGold(-originalAmount);
 
           if (player.gold < amount) {
             await interaction.editReply('Ouro insuficiente.');
             return;
           }
 
-          player.subGold(amount);
+          player.updateGold(amount);
         }
       }
 
-      const log = new Log('ouro', author, channel.id, goldLogBuilder(player, action as Actions, amount, source));
+      const log = bankLog(player, action as Actions, amount, source);
 
       try {
         await applyCorrection(player, author, log, channel, messageUrl, message, interaction);
-      } catch (error: any) {
-        await interaction.editReply(`Falha ao corrigir lançamento: ${error.message}`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao corrigir lançamento de ouro: ${e}`)
+        await interaction.editReply(`Falha ao corrigir lançamento: ${e.message}`);
       }
     }
 
     if (subcommand === 'gema') {
-      const channel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
+      const channel = interaction.client.channels.cache.get(channels.treasure) as TextChannel;
       const message = await fetchMessage(interaction, messageId, messageChannel, baseUrl, channel);
       const typePattern = /(?:Gema\(s\)(?:\sda)?) (.+)/;
 
@@ -287,7 +287,7 @@ module.exports = {
       const content = message.content;
       const originalAction = content.match(actionPattern)![0].toLowerCase();
       const originalAmount = parseInt(content.match(amountPattern)![1]);
-      const originalType = Sanitizer.gemType(content.match(typePattern)![1]);
+      const originalType = getGemType(content.match(typePattern)![1]);
       const originalSource = content.match(sourcePattern)![1];
 
       action = action ?? originalAction;
@@ -298,41 +298,42 @@ module.exports = {
       if (originalAction === action) {
         if (originalAmount !== amount || originalType !== type) {
           if (action === 'deposita') {
-            player.subGems(originalType as keyof Gems, originalAmount);
-            player.addGems(type as keyof Gems, amount);
+            player.updateGems(originalType as keyof Gems, -originalAmount);
+            player.updateGems(type as keyof Gems, amount);
           } else {
-            player.addGems(originalType as keyof Gems, originalAmount);
+            player.updateGems(originalType as keyof Gems, originalAmount);
 
             if (player.gems[type as keyof Gems] < amount) {
               await interaction.editReply('Gemas insuficientes.');
               return;
             }
 
-            player.subGems(type as keyof Gems, amount);
+            player.updateGems(type as keyof Gems, -amount);
           }
         }
       } else {
         if (action === 'deposita') {
-          player.addGems(originalType as keyof Gems, originalAmount);
-          player.addGems(type as keyof Gems, amount);
+          player.updateGems(originalType as keyof Gems, originalAmount);
+          player.updateGems(type as keyof Gems, amount);
         } else {
-          player.subGems(originalType as keyof Gems, originalAmount);
+          player.updateGems(originalType as keyof Gems, -originalAmount);
 
           if (player.gems[type as keyof Gems] < amount) {
             await interaction.editReply('Gemas insuficientes.');
             return;
           }
 
-          player.subGems(type as keyof Gems, amount);
+          player.updateGems(type as keyof Gems, -amount);
         }
       }
 
-      const log = new Log('gema', author, channel.id, gemLogBuilder(player, type as keyof Gems, amount, action as Actions, source));
+      const log = gemLog(player, type as keyof Gems, action as Actions, amount, source);
 
       try {
         await applyCorrection(player, author, log, channel, messageUrl, message, interaction);
-      } catch (error: any) {
-        await interaction.editReply(`Falha ao corrigir lançamento: ${error.message}`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao corrigir lançamento de gemas: ${e}`)
+        await interaction.editReply(`Falha ao corrigir lançamento: ${e.message}`);
       }
     }
 
@@ -357,62 +358,64 @@ module.exports = {
       const originalAction = parseInt(content.match(xpPattern)![1]) < 0 ? 'retira' : 'deposita';
       const originalAmount = Math.abs(parseInt(content.match(xpPattern)![1]));
       const originalSource = content.match(sourcePattern)![1];
-      const originalCharacter = content.match(characterPattern)![1];
-      const { name: originalName, key: originalKey } = Sanitizer.character(originalCharacter);
+      const originalName = content.match(characterPattern)![1];
 
       action = action ?? originalAction;
       amount = amount ?? originalAmount;
       source = source ?? originalSource;
       name = name ?? originalName;
-      key = key ?? originalKey;
 
-      if (!player.characters[originalKey] || !player.characters[key]) {
-        await interaction.editReply('Personagem não encontrado. Utilize o comando `/listar` para conferir seus personagens.');
+      if (!player.getCharacter(originalName) || !player.getCharacter(name)) {
+        await interaction.editReply('Personagem não encontrado! Utilize o comando `/personagem adicionar` para criar o personagem.');
         return;
       }
 
-      if (originalAction === action) {
-        if (originalAmount !== amount || originalKey !== key) {
-          if (action === 'deposita') {
-            player.subXp(originalKey, originalAmount);
-            player.addXp(key, amount);
-          } else {
-            player.addXp(originalKey, originalAmount);
+      const character = player.getCharacter(name)!;
+      const originalCharacter = player.getCharacter(originalName)!;
 
-            if (player.characters[key].xp < amount) {
+      if (originalAction === action) {
+        if (originalAmount !== amount || originalName !== name) {
+          if (action === 'deposita') {
+            originalCharacter.updateXp(-originalAmount);
+            character.updateXp(amount);
+          } else {
+            originalCharacter.updateXp(originalAmount);
+
+            if (character.xp < amount) {
               await interaction.editReply('XP não pode ficar abaixo de 0.');
               return;
             }
 
-            player.subXp(key, amount);
+            character.updateXp(-amount);
           }
         }
       } else {
         if (action === 'deposita') {
-          player.addXp(originalKey, originalAmount);
-          player.addXp(key, amount);
+          originalCharacter.updateXp(originalAmount);
+          character.updateXp(amount);
         } else {
-          player.subXp(originalKey, originalAmount);
+          originalCharacter.updateXp(-originalAmount);
 
-          if (player.characters[key].xp < amount) {
+          if (character.xp < amount) {
             await interaction.editReply('XP não pode ficar abaixo de 0.');
             return;
           }
 
-          player.subXp(key, amount);
+          character.updateXp(-amount);
         }
       }
 
-      const log = new Log('xp', author, channel.id, xpLogBuilder(player, key, action === 'retira' ? -amount : amount, source));
+      const log = xpLog(player.id, character, action === 'retira' ? -amount : amount, source);
 
       try {
-        if (originalKey !== key) {
-          const oldLog = new Log('xp', author, channel.id, xpLogBuilder(player, originalKey, originalAction === 'retira' ? originalAmount : -originalAmount, messageUrl))
-          await channel.send(`Correção do lançamento: ${messageUrl}\n\n` + oldLog.content);
+        if (originalName !== name) {
+          const oldLog = xpLog(player.id, originalCharacter, originalAction === 'retira' ? originalAmount : -originalAmount, messageUrl);
+          await channel.send(`Correção do lançamento: ${messageUrl}\n\n` + oldLog);
         }
         await applyCorrection(player, author, log, channel, messageUrl, message, interaction);
-      } catch (error: any) {
-        await interaction.editReply(`Falha ao corrigir lançamento: ${error.message}`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao corrigir lançamento de XP: ${e}`);
+        await interaction.editReply(`Falha ao corrigir lançamento: ${e.message}`);
       }
     }
   }

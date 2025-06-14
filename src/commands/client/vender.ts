@@ -1,8 +1,7 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log, Sanitizer } from '../../lib/classes';
-import { goldLogBuilder, vendingLogBuilder } from '../../lib/messages';
+import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
+import { sellItem } from '../../lib/controllers/shop';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -40,39 +39,16 @@ module.exports = {
 
     const author = interaction.user!.id;
     const player = await loadPlayer(author);
-    const characterInput = interaction.options.getString('personagem')!;
-    const { key: characterKey } = Sanitizer.character(characterInput);
+    const characterName = interaction.options.getString('personagem')!;
     const item = interaction.options.getString('item')!;
     const amount = interaction.options.getInteger('quantidade')!;
     const price = Math.floor(interaction.options.getInteger('preço')! * amount / 2);
     const vendingChannel = interaction.client.channels.cache.get(channels.shop!) as TextChannel;
     const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado! Utilize o comando `/registrar` para se cadastrar.');
-      return;
-    }
-
-    const character = player.characters[characterKey];
-
-    if (!character) {
-      await interaction.editReply('Personagem não encontrado! Utilize o comando `/listar` para ver seus personagens.');
-      return;
-    }
-
-    const vendingLog = new Log('vending', author, vendingChannel.id, vendingLogBuilder(author, character, item, amount, price));
+    const character = player?.getCharacter(characterName);
 
     try {
-      const vendingMessage = await vendingChannel.send(vendingLog.content);
-      await registerLog(vendingLog, author);
-
-      player.addGold(price);
-      const goldLog = new Log('gold', author, bankChannel.id, goldLogBuilder(player, 'deposita', price, vendingMessage.url));
-
-      await updatePlayer(player);
-      await bankChannel.send(goldLog.content);
-      await registerLog(goldLog, author);
-
+      await sellItem(player, character, { name: item, price: price }, amount, vendingChannel, bankChannel);
       await interaction.editReply(`${amount}x ${item} vendido(s) com sucesso!`);
     } catch (error) {
       await interaction.editReply(`Falha ao realizar a venda: ${error}`);

@@ -1,5 +1,7 @@
 import { levelsTable, tiersTable } from './tables';
-import { Gems, CharacterDef } from './definitions';
+import { Gems } from './definitions';
+import { StringMappedInteractionTypes, TextChannel } from 'discord.js';
+import { registerLog, updatePlayer } from './firebase/firestoreQuerys';
 
 export class Player {
   id: string;
@@ -91,38 +93,4 @@ export class Character {
   toObject() { return { ...this }; }
 
   static fromObject(character: Character) { return new Character(character.name, character.xp, character.level, character.tier); }
-}
-
-export class Log {
-  type;
-  targets;
-  channels
-  content;
-
-	constructor(type: string, targets: string[] | string, channels: string[] | string, content: string) {
-		this.type = type;
-		this.targets = targets;
-		this.channels = channels;
-		this.content = content;
-	}
-}
-
-export class Sanitizer {
-  static character(input: string) {
-    const name = input.trim().replace(/\s{2,}/g, ' ');
-    const key = name.replace(/\s/g, '_').normalize('NFD').replace(/\W/g, '').toLowerCase();
-
-    return { name, key };
-  }
-
-  static urlComponents(url: string): string[] {
-    const components = url.match(/\d{18,}/g);
-    const [guildId, channelId, messageId] = components!;
-
-    return [guildId, channelId, messageId];
-  }
-
-  static gemType(input: string) {
-    return input.normalize('NFD').replace(/\W/g, '').toLowerCase();
-  }
 }

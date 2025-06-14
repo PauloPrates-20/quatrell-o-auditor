@@ -1,6 +1,6 @@
 /* Imports */
-import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember, BaseGuildTextChannel, TextChannel } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, TextChannel } from 'discord.js';
+import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
@@ -74,7 +74,7 @@ module.exports = {
     if (subcommand === 'ouro') {
       const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
       try {
-        await depositGold(player, amount, source, bankChannel, true);
+        await depositGold(player, amount, source, bankChannel, false);
         await interaction.editReply(`${amount} PO depositados para <@${target}>.`);
       } catch (e: any) {
         console.error(`[ERROR] Falha ao recompensar ouro: ${e}`);
@@ -85,7 +85,7 @@ module.exports = {
       const type = interaction.options.getString('tipo') as keyof Gems;
 
       try {
-        await depositGem(player, type, amount, source, treasureChannel, true);
+        await depositGem(player, type, amount, source, treasureChannel, false);
         await interaction.editReply(`${amount}x Gema ${GemTypes[type]} depositada(s) para <@${target}>.`);
       } catch (e: any) {
         console.error(`[ERROR] Falha ao recompensar gemas: ${e}`)

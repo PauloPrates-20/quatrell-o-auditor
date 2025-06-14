@@ -1,9 +1,8 @@
 /* Imports */
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, TextChannel } from 'discord.js';
-import { loadPlayer, updatePlayer } from '../../lib/firebase/firestoreQuerys';
+import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
-import { Sanitizer } from '../../lib/classes';
 import { setGold } from '../../lib/controllers/bank';
 import { setGem } from '../../lib/controllers/treasure';
 import { setXp } from '../../lib/controllers/xp';

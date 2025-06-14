@@ -1,19 +1,47 @@
 import { Character, Player } from '../classes';
+import { endTransaction } from '../utils';
 import { TextChannel } from 'discord.js';
-import { assertPositive, characterValidation, playerValidation, sourceValidation } from '../validation';
-import { registerLog, updatePlayer } from '../firebase/firestoreQuerys';
+import { assertPositive, characterValidation, enoughCurrencyValidation, playerValidation, runValidations, sourceValidation } from '../validation';
 import { xpLog } from '../messages';
+
+export async function gainXp(player: Player | undefined, character: Character | undefined, amount: number, source: string, channel: TextChannel, validateSource = true) {
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    characterValidation(character),
+    validateSource ? sourceValidation(source) : true,
+  );
+
+  character!.updateXp(amount);
+  const log = xpLog(player!.id, character!, amount, source)
+
+  await endTransaction(player!, log, channel);
+}
+
+export async function looseXp(player: Player | undefined, character: Character | undefined, amount: number, source: string, channel: TextChannel, validateSource = true) {
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    characterValidation(character),
+    enoughCurrencyValidation(character!.xp, amount),
+    validateSource ? sourceValidation(source) : true,
+  );
+
+  character!.updateXp(-amount);
+  const log = xpLog(player!.id, character!, -amount, source)
+
+  await endTransaction(player!, log, channel);
+}
 
 export async function setXp(author: string, player: Player | undefined, character: Character | undefined, amount: number, channel: TextChannel) {
   // validation block
-  let validation = playerValidation(player);
-  validation = assertPositive(amount);
-  validation = characterValidation(character)
-
-  if (typeof validation === 'string') throw new Error(validation);
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    characterValidation(character),
+  );
 
   character!.updateXp(amount, true);
 
-  await updatePlayer(player!);
-  await channel.send(`XP do personagem ${character!.name} de <@${player!.id}> ajustado para ${amount} por <@${author}>!`);
+  await endTransaction(player!, `XP do personagem ${character!.name} de <@${player!.id}> ajustado para ${amount} por <@${author}>!`, channel, false);
 }

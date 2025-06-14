@@ -1,34 +1,60 @@
 import { Player } from '../classes';
+import { endTransaction } from '../utils';
 import { TextChannel } from 'discord.js';
-import { assertPositive, playerValidation, sourceValidation } from '../validation';
-import { registerLog, updatePlayer } from '../firebase/firestoreQuerys';
-import { bankLog } from '../messages';
+import { assertPositive, enoughCurrencyValidation, playerValidation, runValidations, sourceValidation, targetValidation } from '../validation';
+import { bankLog, transferencyLog } from '../messages';
 
-export async function depositGold(player: Player | undefined, amount: number, source: string, channel: TextChannel, reward = false) {
-  // Validation block
-  let validation = playerValidation(player);
-  validation = assertPositive(amount);
-  if (!reward) validation = sourceValidation(source);
-
-  if (typeof validation === 'string') throw new Error(validation);
+export async function depositGold(player: Player | undefined, amount: number, source: string, channel: TextChannel, validateSource = true) {
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    validateSource ? sourceValidation(source) : true,
+  );
 
   player!.updateGold(amount);
   const log = bankLog(player!, 'deposita', amount, source);
 
-  await updatePlayer(player!);
-  await registerLog(log, player!.id);
-  await channel.send(`${amount} PO despositado(s) com sucesso!`);
+  await endTransaction(player!, log, channel);
+}
+
+export async function withdrawGold(player: Player | undefined, amount: number, source: string, channel: TextChannel) {
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+    sourceValidation(source),
+    enoughCurrencyValidation(player!.gold, amount),
+  );
+
+  player!.updateGold(-amount);
+  const log = bankLog(player!, 'retira', amount, source);
+
+  await endTransaction(player!, log, channel);
 }
 
 export async function setGold(author: string, player: Player | undefined, amount: number, channel: TextChannel) {
   // validation block
-  let validation = playerValidation(player);
-  validation = assertPositive(amount);
-
-  if (typeof validation === 'string') throw new Error(validation);
+  runValidations(
+    playerValidation(player),
+    assertPositive(amount),
+  );
 
   player!.updateGold(amount, true);
 
-  await updatePlayer(player!);
-  await channel.send(`Ouro de <@${player!.id}> ajustado para ${amount} PO por <@${author}>!`);
+  endTransaction(player!, `Ouro de <@${player!.id}> ajustado para ${amount} PO por <@${author}>!`, channel, false);
+}
+
+export async function transferGold(author: Player | undefined, target: Player | undefined, amount: number, transferChannel: TextChannel, bankChannel: TextChannel) {
+  // validation block
+  runValidations(
+    playerValidation(author),
+    targetValidation(target),
+    assertPositive(amount),
+    enoughCurrencyValidation(author!.gold, amount)
+  );
+
+  const transferLog = transferencyLog(author!.id, target!.id, 'gold', amount);
+  const source = (await transferChannel.send(transferLog)).url;
+
+  withdrawGold(author, amount, source, bankChannel);
+  depositGold(target, amount, source, bankChannel);
 }

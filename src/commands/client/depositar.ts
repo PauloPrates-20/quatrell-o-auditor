@@ -1,11 +1,10 @@
 /* Imports */
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log } from '../../lib/classes';
-import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
-import { sourceValidation } from '../../lib/validation';
+import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
+import { depositGold } from '../../lib/controllers/bank';
+import { depositGem } from '../../lib/controllers/treasure';
 import { GemTypes } from '../../lib/tables';
 
 module.exports = {
@@ -66,50 +65,26 @@ module.exports = {
     const player = await loadPlayer(author);
     const amount = (interaction.options.getInteger('ouro') ?? interaction.options.getInteger('gemas'))!
 
-    if (!sourceValidation(source!)) {
-      await interaction.editReply('Origem inválida.');
-      return;
-    }
-
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado. Utilize `/registrar` para se cadastrar.');
-      return;
-    }
-
     if (subcommand === 'ouro') {
-      const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
-      if (amount < 0){
-        await interaction.editReply('Valor de inválido.');
-        return;
-      }else {
-        player.addGold(amount);
-      }
-
-      const goldLog = new Log('ouro', author, bankChannel.id, goldLogBuilder(player, 'deposita', amount, source!));
+      const bankChannel = interaction.client.channels.cache.get(channels.bank) as TextChannel;
 
       try {
-        await updatePlayer(player);
-        await registerLog(goldLog, author);
-        bankChannel.send(goldLog.content);
-        await interaction.editReply(`${amount} PO adicionados com sucesso.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao depositar ouro: ${error}`);
+        await depositGold(player, amount, source, bankChannel);
+        await interaction.editReply(`${amount} PO depositado(s) com sucesso!`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao depositar ouro: ${e}`);
+        await interaction.editReply(`Falha ao depositar ouro: ${e.message}`);
       }
     } else if (subcommand === 'gema') {
-      const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
-      const type = interaction.options.getString('tipo');
-
-      player.addGems(type as keyof Gems, amount);
-
-      const gemLog = new Log('gema', author, treasureChannel.id, gemLogBuilder(player, type as keyof Gems, amount, 'deposita', source!));
+      const treasureChannel = interaction.client.channels.cache.get(channels.treasure) as TextChannel;
+      const type = interaction.options.getString('tipo') as keyof Gems;
 
       try {
-        await updatePlayer(player);
-        await registerLog(gemLog, author);
-        treasureChannel.send(gemLog.content);
-        await interaction.editReply(`${amount} Gema(s) ${GemTypes[type as keyof Gems]} adicionada(s) com sucesso.`);
-      } catch (error) {
-        await interaction.editReply(`Falha ao depositar gemas: ${error}`);
+        await depositGem(player, type, amount, source, treasureChannel);
+        await interaction.editReply(`${amount}x ${GemTypes[type]} depositada(s) com sucesso!`);
+      } catch (e: any) {
+        console.error(`[ERROR] Falha ao depositar gemas: ${e}`);
+        await interaction.editReply(`Falha ao depositar gemas: ${e.message}`);
       }
     }
   },
