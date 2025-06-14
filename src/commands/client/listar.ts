@@ -2,6 +2,7 @@
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
 import { playerValidation } from '../../lib/validation';
+import { Player } from '../../lib/classes';
 
 module.exports = {
 	data: new SlashCommandBuilder()

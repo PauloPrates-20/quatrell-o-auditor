@@ -12,7 +12,7 @@ export function sourceValidation(source: string): boolean | string {
 
 // Validates if a valid player object was passed
 export function playerValidation(player: Player | undefined): boolean | string {
-  if (typeof player !== typeof Player) return 'Jogador não encontrado! Utilize o comando `/registrar` para se cadastrar';
+  if (!player?.id) return 'Jogador não encontrado! Utilize o comando `/registrar` para se cadastrar';
 
   return true;
 }
@@ -24,7 +24,7 @@ export function assertPositive(amount: number): boolean | string {
 }
 
 export function characterValidation(character: Character | undefined): boolean | string {
-  if (typeof character !== typeof Character) return 'Personagem não encontrado! Utilize o comando `/personagem adicionar` para criar o personagem.';
+  if (!character?.name) return 'Personagem não encontrado! Utilize o comando `/personagem adicionar` para criar o personagem.';
 
   return true;
 }
