@@ -1,18 +1,17 @@
 import { Request, Response, Router } from 'express';
 import { client } from './main';
-import { Log } from './lib/classes';
-import { loadPlayer, updatePlayer, registerLog } from './lib/firebase/firestoreQuerys';
 import { channels } from './config';
-import { goldLogBuilder, purchaseLogBuilder } from './lib/messages';
+import { loadPlayer } from './lib/firebase/firestoreQuerys';
 import { TextChannel } from 'discord.js';
+import { purchaseItem } from './lib/controllers/shop';
 
 const router = Router();
 
 export default router
   .post('/buy', async (req: Request, res: Response) => {
-    const { accessToken, item, character } = req.body;
+    const { accessToken, item, name } = req.body;
 
-    if (!(accessToken || item || character)) {
+    if (!(accessToken || item || name)) {
       res.status(400).json({ error: 'Missing required fields!' });
       return;
     }
@@ -36,42 +35,14 @@ export default router
     }
 
     const player = await loadPlayer(playerId);
-
-    if (!player) {
-      res.status(404).json({ error: 'Jogador não encontrado! Utilize o comando `/registrar` para se cadastrar.' });
-      return;
-    }
-
-    const characterName = player.characters[character]?.name;
-
-    if (!characterName) {
-      res.status(404).json({ error: 'Personagem não encontrado! Utilize o comando `/personagem adicionar` para criar o personagem.'} );
-      return;
-    }
-
-    if (player.gold < item.price) {
-      res.status(400).json({ error: 'Ouro insuficiente!' });
-      return;
-    }
+    const character = player?.getCharacter(name);
+    const purchaseChannel = client.channels.cache.get(channels.shop) as TextChannel;
+    const bankChannel = client.channels.cache.get(channels.bank) as TextChannel;
 
     try {
-      const purchaseChannel = client.channels.cache.get(channels.shop!) as TextChannel;
-      const bankChannel = client.channels.cache.get(channels.bank!) as TextChannel;
-      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, characterName, item.name, 1, item.value));
-      const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
-
-      player.subGold(item.value);
-      const goldLog = new Log('gold', playerId, bankChannel.id, goldLogBuilder(player, 'retira', item.value, purchaseMessage.url));
-
-      await Promise.all([
-        bankChannel.send(goldLog.content),
-        updatePlayer(player),
-        registerLog(goldLog, playerId),
-        registerLog(purchaseLog, playerId)
-      ]);
-
+      purchaseItem(player, character, item, 1, purchaseChannel, bankChannel);
       res.status(200).json({ success: true, message: `Compra realizada com sucesso!` });
-    } catch (error) {
-      res.status(500).json({ error: 'Não foi possível concluir a compra!', details: error });
+    } catch (e: any) {
+      res.status(500).json({ error: 'Não foi possível concluir a compra!', details: e.message });
     }
   })
