@@ -10,9 +10,9 @@ const router = Router();
 
 export default router
   .post('/buy', async (req: Request, res: Response) => {
-    const { accessToken, item, character } = req.body;
+    const { accessToken, item, characterKey } = req.body;
 
-    if (!(accessToken || item || character)) {
+    if (!(accessToken || item || characterKey)) {
       res.status(400).json({ error: 'Missing required fields!' });
       return;
     }
@@ -42,9 +42,9 @@ export default router
       return;
     }
 
-    const characterName = player.characters[character]?.name;
+    const character = player.characters[characterKey];
 
-    if (!characterName) {
+    if (!character) {
       res.status(404).json({ error: 'Personagem não encontrado! Utilize o comando `/personagem adicionar` para criar o personagem.'} );
       return;
     }
@@ -57,7 +57,7 @@ export default router
     try {
       const purchaseChannel = client.channels.cache.get(channels.shop!) as TextChannel;
       const bankChannel = client.channels.cache.get(channels.bank!) as TextChannel;
-      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, characterName, item.name, 1, item.value));
+      const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, character, item.name, 1, item.value));
       const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
 
       player.subGold(item.value);
