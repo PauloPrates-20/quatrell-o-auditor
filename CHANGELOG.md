@@ -2,6 +2,10 @@
 
 # Quatrell, o Auditor
 
+## [2.2.1] - 2025-07-09
+- Fixed the purchase command showing the character object in the logs
+- Refactored `/buy` api route to receive the character object
+
 ## [2.2.0] - 2025-03-22
 
 ### Added
