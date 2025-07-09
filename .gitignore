@@ -6,3 +6,8 @@ test.*
 
 # .env files
 .env*
+
+# out dirs
+out/
+dist/
+build/
