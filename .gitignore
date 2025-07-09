@@ -6,7 +6,3 @@ test.*
 
 # .env files
 .env*
-
-# Output
-build/
-dist/
