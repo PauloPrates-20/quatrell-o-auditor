@@ -105,8 +105,8 @@ export class Character {
 
 	constructor(name: string) {
 		this.name = name;
-		this.xp = 0;
-		this.level = 1;
+		this.xp = 2;
+		this.level = 3;
 		this.tier = tiersTable[0].tier;
 	}
 }
