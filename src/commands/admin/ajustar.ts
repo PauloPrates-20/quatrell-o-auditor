@@ -129,7 +129,7 @@ module.exports = {
       const name = interaction.options.getString('personagem')!;
       
       try {
-        const character = new Character(player.getCharacter(name));
+        const character = new Character({ ...player.getCharacter(name) });
         character.setXp(amount);
         player.updateCharacter(name, character);
         
