@@ -81,7 +81,7 @@ module.exports = {
         ),
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 'Ephemeral' });
 
     const target = interaction.options.getUser('jogador')!.id;
     const author = interaction.user.id;

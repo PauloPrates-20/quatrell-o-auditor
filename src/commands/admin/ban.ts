@@ -20,7 +20,7 @@ module.exports = {
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 'Ephemeral' });
 
     const generalChannel = interaction.client.channels.cache.get(channels.general!) as TextChannel;
     const target = interaction.options.getUser('jogador')!.id;

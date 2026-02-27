@@ -7,7 +7,7 @@ module.exports = {
 		.setName('listar')
 		.setDescription('Exibe uma lista de seus personagens cadastrados.'),
 	async execute(interaction: ChatInputCommandInteraction) {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: 'Ephemeral' });
     
     const author = interaction.user.id;
 		const player = await loadPlayer(author);

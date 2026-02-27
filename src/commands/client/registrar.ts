@@ -9,7 +9,7 @@ module.exports = {
 		.setDescription('Registra o jogador no banco de dados do servidor.'),
 	async execute(interaction: ChatInputCommandInteraction) {
     const author = interaction.user.id;
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: 'Ephemeral' });
 		let player = await loadPlayer(author);
 
 		if (player) {

@@ -149,7 +149,7 @@ module.exports = {
         )
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 'Ephemeral' });
 
     const author = interaction.user.id;
     const clientGuild = interaction.guild!.id;
