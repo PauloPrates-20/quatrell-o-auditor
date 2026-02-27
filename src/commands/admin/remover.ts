@@ -16,14 +16,9 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply({ flags: 'Ephemeral' });
     const target = interaction.options.getUser('jogador')!.id;
-    const player = await loadPlayer(target);
-
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado.');
-      return;
-    }
-
+    
     try {
+      await loadPlayer(target);
       deletePlayer(target);
       await interaction.editReply(`Jogador <@${target}> deletado.`);
     } catch (error) {
