@@ -31,7 +31,12 @@ module.exports = {
       return;
     }
 
-    const player = await loadPlayer(target);
+    let player = false;
+
+    try {
+      player = !!(await loadPlayer(target));
+    } catch(e) {}
+
     let deleted = false;
 
     if (player) {
@@ -39,7 +44,7 @@ module.exports = {
         await deletePlayer(target);
         deleted = true;
       } catch (error) {
-        await interaction.editReply(`Falha do deletar dados do jgoador: ${error}`);
+        await interaction.editReply(`Falha ao deletar dados do jogador: ${error}`);
       }
     }
 
