@@ -4,7 +4,7 @@ import { loadPlayer, updatePlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
-import { Sanitizer } from '../../lib/classes';
+import { Character, Player, Sanitizer } from '../../lib/classes';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -86,7 +86,7 @@ module.exports = {
     const target = interaction.options.getUser('jogador')!.id;
     const author = interaction.user.id;
     const subcommand = interaction.options.getSubcommand();
-    const player = await loadPlayer(target);
+    let player;
     const amount = (
       interaction.options.getInteger('ouro') ?? 
       interaction.options.getInteger('gemas') ?? 
@@ -96,20 +96,18 @@ module.exports = {
     const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
     const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
 
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado.');
+    try {
+      player = await loadPlayer(target);
+    } catch (e: any) {
+      console.error(e);
+      await interaction.editReply(e.message);
       return;
     }
 
     if (subcommand === 'ouro') {
-      if (amount < 0) {
-        await interaction.editReply('Valor não pode ser menor que 0.');
-        return;
-      }
-
-      player.gold = amount;
-
       try {
+        player.setGold(amount);
+        
         await updatePlayer(player);
         await interaction.editReply('Ajuste realizado com sucesso.');
         bankChannel.send(`Ouro de <@${target}> ajustado para ${amount} PO por <@${author}>.`);
@@ -117,45 +115,24 @@ module.exports = {
         await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
       }
     } else if (subcommand === 'gema') {
-      const gemType = interaction.options.getString('tipo') as keyof Gems;
-
-      if (amount < 0) {
-        await interaction.editReply('Valor não pode ser menor que 0.');
-        return;
-      }
-
-      player.gems[gemType] = amount;
-
+      const gemType = interaction.options.getString('tipo')!;
+      
       try {
+        player.setGems(gemType, amount);
         await updatePlayer(player);
         await interaction.editReply('Ajuste realizado com sucesso.');
-        treasureChannel.send(`Gemas ${GemTypes[gemType]} de <@${target}> ajustadas para ${amount} por <@${author}>.`);
+        treasureChannel.send(`Gemas ${GemTypes[gemType as keyof Gems]} de <@${target}> ajustadas para ${amount} por <@${author}>.`);
       } catch (error) {
         await interaction.editReply(`Falha ao realizar ajuste: ${error}`);
       }
     } else if (subcommand === 'xp') {
-      const { name, key } = Sanitizer.character(interaction.options.getString('personagem')!);
-
-      if (/\d/.test(name.charAt(0))) {
-        await interaction.editReply('O nome do personagem não pode começar com números.');
-        return;
-      }
-
-      const character = player.characters[key];
-
-      if (amount < 0) {
-        await interaction.editReply('Valor não pode ser menor que 0.');
-        return;
-      }
-
-      if (!character) {
-        await interaction.editReply('Personagem não encontrado.');
-        return;
-      }
-
-      player.setXp(key, amount);
-
+      const name = interaction.options.getString('personagem')!;
+      
       try {
+        const character = new Character(player.getCharacter(name));
+        character.setXp(amount);
+        player.updateCharacter(name, character);
+        
         await updatePlayer(player);
         await interaction.editReply('Ajuste realizado com sucesso.');
         xpChannel.send(`XP do personagem ${character.name} de <@${target}> ajustado para ${amount} XP por <@${author}>.`);
