@@ -37,6 +37,14 @@ export class Player {
 		this.gold -= amount;
 	}
 
+	setGold(amount: number) {
+		if(amount < 0) {
+			throw new Error('Ouro do jogador não pode ser inferior a 0');
+		}
+
+		this.gold = amount;
+	}
+
 	// Adds a character to the player
 	registerCharacter(character: Character) {
 		const index = this.characters.findIndex(char => char.name === character.name);
@@ -44,7 +52,7 @@ export class Player {
 			throw new Error('personagem já existe.');
 		}
 
-		this.characters.push(Object.assign({}, character));
+		this.characters.push({ ...character });
 	}
 
 	// Deletes a character from the player
@@ -73,17 +81,60 @@ export class Player {
 		this.characters[index].name = newName;
 	}
 
+	getCharacterIndex(name: string): number {
+		const index = this.characters.findIndex(char => char.name === name)
+
+		if(index === -1) {
+			throw new Error('personagem não encontrado.')
+		}
+
+		return index;
+	}
+
+	getCharacter(name: string): CharacterDef {
+		return this.characters[this.getCharacterIndex(name)];
+	}
+
+	updateCharacter(name: string, character: Character) {
+		const index = this.getCharacterIndex(name);
+		
+		this.characters[index] = { ...character };
+	}
+
 	// Adds gems to the player
-	addGems(type: keyof Gems, amount: number) {
-		this.gems[type] += amount;
+	addGems(gemType: string, amount: number) {
+		if(!this.isGemKey(gemType)) {
+			throw new Error('tipo de gema inválido.');
+		}
+		
+		this.gems[gemType] += amount;
 	}
 
 	// Removes gems from the player
-	subGems(type: keyof Gems, amount: number) {
-		if(this.gems[type] < amount) {
+	subGems(gemType: string, amount: number) {
+		if(!this.isGemKey(gemType)) {
+			throw new Error('tipo de gema inválido.');
+		}
+		if(this.gems[gemType] < amount) {
 			throw new Error('gemas insuficientes.');
 		}
-		this.gems[type] -= amount;
+
+		this.gems[gemType] -= amount;
+	}
+
+	setGems(gemType: string, amount: number) {
+		if(!this.isGemKey(gemType)) {
+			throw new Error('tipo de gema inválido.');
+		}
+		if(amount < 0) {
+			throw new Error('quantidade de gemas do jogador não pode ser inferior a 0.')
+		}
+
+		this.gems[gemType] = amount;
+	}
+
+	private isGemKey(key: string): key is keyof Gems {
+		return key in this.gems;
 	}
 }
 
