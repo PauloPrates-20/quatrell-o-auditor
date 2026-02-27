@@ -1,6 +1,6 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Log, Sanitizer } from '../../lib/classes';
+import { Character, Log, Sanitizer } from '../../lib/classes';
 import { goldLogBuilder, purchaseLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 
@@ -39,45 +39,38 @@ module.exports = {
     await interaction.deferReply({ flags: 'Ephemeral' });
 
     const author = interaction.user!.id;
-    const player = await loadPlayer(author);
-    const characterInput = interaction.options.getString('personagem')!;
-    const { key: characterKey } = Sanitizer.character(characterInput);
+    let player;
+    let character;
+    const charName = interaction.options.getString('personagem')!;
     const item = interaction.options.getString('item')!;
     const amount = interaction.options.getInteger('quantidade')!;
     const price = interaction.options.getInteger('preço')! * amount;
     const purchaseChannel = interaction.client.channels.cache.get(channels.shop!) as TextChannel;
     const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
 
-    if (!player) {
-      await interaction.editReply('Jogador não encontrado! Utilize o comando `/registrar` para se cadastrar.');
-      return;
-    }
-
-    const character = player.characters[characterKey];
-
-    if (!character) {
-      await interaction.editReply('Personagem não encontrado! Utilize o comando `/listar` para ver seus personagens.');
-      return;
-    }
-
-    if (player.gold < price) {
-      await interaction.editReply('Ouro insuficiente!');
-      return;
-    }
-
-    const purchaseLog = new Log('purchase', author, purchaseChannel.id, purchaseLogBuilder(author, character, item, amount, price));
-
     try {
-      const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
-      await registerLog(purchaseLog, author);
+      player = await loadPlayer(author);
+      character = new Character({ ...player.getCharacter(charName) });
+    } catch(e: any) {
+      await interaction.editReply(e.message);
+      return;
+    }
 
+    
+    try {
       player.subGold(price);
+
+      const purchaseLog = new Log('purchase', author, purchaseChannel.id, purchaseLogBuilder(author, character, item, amount, price));
+      const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
       const goldLog = new Log('gold', author, bankChannel.id, goldLogBuilder(player, 'retira', price, purchaseMessage.url));
 
-      await updatePlayer(player);
-      await bankChannel.send(goldLog.content);
-      await registerLog(goldLog, author);
-
+      await Promise.all([
+        registerLog(purchaseLog, author),
+        updatePlayer(player),
+        bankChannel.send(goldLog.content),
+        registerLog(goldLog, author)
+      ]);
+      
       await interaction.editReply(`${amount}x ${item} comprado(s) com sucesso!`);
     } catch (error) {
       await interaction.editReply(`Falha ao realizar a compra: ${error}`);
