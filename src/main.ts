@@ -16,15 +16,15 @@ const app = express();
 app.use(express.json());
 app.use('/api', router);
 app.listen(5000, '0.0.0.0', () => {
-  console.log('API ready at port 5000!');
+    console.log('API ready at port 5000!');
 })
 // Creates the client instace
 export const client: CustomClient = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent,
-	],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
 });
 
 /* Command Handling */
@@ -36,128 +36,126 @@ const commandFoldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(commandFoldersPath);
 
 for (const folder of commandFolders) {
-	// Grab the command files
-	const commandFilesPath = path.join(commandFoldersPath, folder);
-	const commandFiles = fs.readdirSync(commandFilesPath).filter(file => (file.endsWith('.ts') || file.endsWith('.js')));
+    // Grab the command files
+    const commandFilesPath = path.join(commandFoldersPath, folder);
+    const commandFiles = fs.readdirSync(commandFilesPath).filter(file => (file.endsWith('.ts') || file.endsWith('.js')));
 
-	for (const file of commandFiles) {
-		const filePath = path.join(commandFilesPath, file);
-		const command = require(filePath);
-		// Set a new item in the Collection with the key as the command name and the value as the exported module
-		if ('data' in command && 'execute' in command) {
-			client.commands.set(command.data.name, command);
-		} else {
-			console.log(`[WARNING] Command at ${filePath} is missing a required "data" or "execute" property.`);
-		}
-	}
+    for (const file of commandFiles) {
+        const filePath = path.join(commandFilesPath, file);
+        const command = require(filePath);
+        // Set a new item in the Collection with the key as the command name and the value as the exported module
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command);
+        } else {
+            console.log(`[WARNING] Command at ${filePath} is missing a required "data" or "execute" property.`);
+        }
+    }
 }
 
 // Bot login confirmation
 client.once(Events.ClientReady, readyClient => {
-	console.log(`Ready! Logged as ${readyClient.user.tag}.`);
+    console.log(`Ready! Logged as ${readyClient.user.tag}.`);
 });
 
 // Event to receive and execute the chat commands
 client.on(Events.InteractionCreate, async interaction => {
-	// Handles autocomplete interactions for the /personagem command
-	if (interaction.isAutocomplete()) {
-		const command = client.commands.get(interaction.commandName);
+    // Handles autocomplete interactions for the /personagem command
+    if (interaction.isAutocomplete()) {
+        const command = client.commands.get(interaction.commandName);
 
-		if (
-        command.data.name === 'personagem' || 
-        (command.data.name === 'corrigir' && interaction.options.getSubcommand() === 'xp') || 
-        command.data.name === 'comprar' ||
-        command.data.name === 'vender'
-      ) {
-			const player = await loadPlayer((interaction.member as GuildMember).id);
+        if (
+            command.data.name === 'personagem' ||
+            (command.data.name === 'corrigir' && interaction.options.getSubcommand() === 'xp') ||
+            command.data.name === 'comprar' ||
+            command.data.name === 'vender'
+        ) {
+            const player = await loadPlayer((interaction.member as GuildMember).id);
 
-			// Respond with an empty array if player data is not found
-			if (!player) {
-				await interaction.respond([]);
-				return;
-			}
+            // Respond with an empty array if player data is not found
+            if (!player) {
+                await interaction.respond([]);
+                return;
+            }
 
-			// Get the focused option in the autocomplete
-			const focusedOption = interaction.options.getFocused(true);
+            // Get the focused option in the autocomplete
+            const focusedOption = interaction.options.getFocused(true);
 
-			if (focusedOption.name === 'personagem') {
-				const choices = Object.keys(player.characters).map(key => {
-					const character = player.characters[key];
-					return {
-						// What the player sees
-						name: character.name,
-						// The actual value passed to the command
-						value: character.name,
-					};
-				});
+            if (focusedOption.name === 'personagem') {
+                const choices = player.characters.map(character => {
+                    return {
+                        // What the player sees
+                        name: character.name,
+                        // The actual value passed to the command
+                        value: character.name,
+                    };
+                });
 
-				// Filter choices base on user input
-				const filteredChoices = choices.filter(choice => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
+                // Filter choices base on user input
+                const filteredChoices = choices.filter(choice => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
 
-				// Respond with the filtered choices
-				await interaction.respond(filteredChoices.slice(0, 25));
-			}
-		} else if (command.data.name === 'ajustar' && interaction.options.getSubcommand() === 'xp') {
-			const focusedOption = interaction.options.getFocused(true);
+                // Respond with the filtered choices
+                await interaction.respond(filteredChoices.slice(0, 25));
+            }
+        } else if (command.data.name === 'ajustar' && interaction.options.getSubcommand() === 'xp') {
+            const focusedOption = interaction.options.getFocused(true);
 
-			if (focusedOption.name === 'personagem') {
-				const options = interaction.options.data[0]?.options || [];
-				const jogadorOption = options.find(option => option.name === 'jogador');
-				const target = jogadorOption!.value;
-				console.log('Target member: ', target);
+            if (focusedOption.name === 'personagem') {
+                const options = interaction.options.data[0]?.options || [];
+                const jogadorOption = options.find(option => option.name === 'jogador');
+                const target = jogadorOption!.value;
+                console.log('Target member: ', target);
 
-				if (!target) {
-					console.error('Target member was not found.');
-					await interaction.respond([]);
-					return;
-				}
+                if (!target) {
+                    console.error('Target member was not found.');
+                    await interaction.respond([]);
+                    return;
+                }
 
-				const targetMember = await interaction.guild!.members.fetch(target as UserResolvable);
-				const player = await loadPlayer(targetMember.id);
+                const targetMember = await interaction.guild!.members.fetch(target as UserResolvable);
+                const player = await loadPlayer(targetMember.id);
 
-				if (!player) {
-					await interaction.respond([]);
-					return;
-				}
+                if (!player) {
+                    await interaction.respond([]);
+                    return;
+                }
 
-				const choices = Object.keys(player.characters).map(key => {
-					const character = player.characters[key];
-					return {
-						name: character.name,
-						value: character.name,
-					};
-				});
+                const choices = player.characters.map(character => {
+                    return {
+                        name: character.name,
+                        value: character.name,
+                    };
+                });
 
-				const filteredChoices = choices.filter(choice => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
+                const filteredChoices = choices.filter(choice => choice.name.toLowerCase().includes(focusedOption.value.toLowerCase()));
 
-				await interaction.respond(filteredChoices);
-			}
-		}
-	}
+                await interaction.respond(filteredChoices);
+            }
+        }
+    }
 
-	// Checks if the received interaction was a chat command
-	if (!interaction.isChatInputCommand()) return;
+    // Checks if the received interaction was a chat command
+    if (!interaction.isChatInputCommand()) return;
 
-	// Gets the command name
-  const interactionClient = interaction.client as CustomClient;
-	const command = interactionClient.commands.get(interaction.commandName);
+    // Gets the command name
+    const interactionClient = interaction.client as CustomClient;
+    const command = interactionClient.commands.get(interaction.commandName);
 
-	// Check if the command exists
-	if (!command) {
-		console.error(`No command matching ${interaction.commandName} found`);
-		return;
-	}
+    // Check if the command exists
+    if (!command) {
+        console.error(`No command matching ${interaction.commandName} found`);
+        return;
+    }
 
-	// Try to execute the command
-	try {
-		command.execute(interaction);
-	} catch (error) {
-		if (interaction.replied || interaction.deferred) {
-			await interaction.followUp({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
-		} else {
-			await interaction.reply({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
-		}
-	}
+    // Try to execute the command
+    try {
+        command.execute(interaction);
+    } catch (error) {
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
+        } else {
+            await interaction.reply({ content: `Ocorreu um erro ao executar o comando: ${error}`, ephemeral: true });
+        }
+    }
 });
 
 // Login to discord with the token
