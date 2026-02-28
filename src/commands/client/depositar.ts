@@ -95,8 +95,6 @@ module.exports = {
             const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
             const type = interaction.options.getString('tipo')!;
 
-            
-            
             try {
                 player.addGems(type, amount);
                 const gemLog = new Log('gema', author, treasureChannel.id, gemLogBuilder(player, type as keyof Gems, amount, 'deposita', source!));
@@ -106,10 +104,10 @@ module.exports = {
                     registerLog(gemLog, author),
                     treasureChannel.send(gemLog.content),
                 ]);
-                
+
                 await interaction.editReply(`${amount} Gema(s) ${GemTypes[type as keyof Gems]} adicionada(s) com sucesso.`);
-            } catch (error) {
-                await interaction.editReply(`Falha ao depositar gemas: ${error}`);
+            } catch (e: any) {
+                await interaction.editReply(`Falha ao depositar gemas: ${e.message}`);
             }
         }
     },
