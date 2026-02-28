@@ -65,8 +65,8 @@ module.exports = {
             ]);
 
             await interaction.editReply(`${amount}x ${item} comprado(s) com sucesso!`);
-        } catch (error) {
-            await interaction.editReply(`Falha ao realizar a compra: ${error}`);
+        } catch (e: any) {
+            await interaction.editReply(`Falha ao realizar a compra: ${e.message}`);
         }
     }
 }
