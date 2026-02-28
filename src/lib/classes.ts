@@ -11,9 +11,9 @@ export class Player {
 		id, gold = 0, gems = { comum: 0, transmutacao: 0, ressureicao: 0 }, characters = []
 	}: {
 		id: string;
-		gold: number;
-		gems: Gems;
-		characters: CharacterDef[];
+		gold?: number;
+		gems?: Gems;
+		characters?: CharacterDef[];
 	}) {
 		this.id = id;
 		this.gold = gold;
@@ -151,9 +151,9 @@ export class Character {
 		tier = tiersTable[0].tier,
 	}: {
 		name: string;
-		xp: number;
-		level: number;
-		tier: string;
+		xp?: number;
+		level?: number;
+		tier?: string;
 	}) {
 		this.name = name;
 		this.xp = xp;
