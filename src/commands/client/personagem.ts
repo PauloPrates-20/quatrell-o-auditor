@@ -158,10 +158,11 @@ module.exports = {
             const xp = interaction.options.getInteger('xp')!;
 
             try {
-                const character = new Character(player.getCharacter(name));
+                const character = new Character({ ...player.getCharacter(name)} );
                 character.addXp(xp);
+                player.updateCharacter(name, character);
                 validateSource(source);
-                const log = new Log('xp', author, xpChannel.id, xpLogBuilder(player, name, xp, source));
+                const log = new Log('xp', author, xpChannel.id, xpLogBuilder(player, character, xp, source));
 
                 await Promise.all([
                     updatePlayer(player),
@@ -180,8 +181,9 @@ module.exports = {
             try {
                 const character = new Character(player.getCharacter(name));
                 character.subXp(xp);
+                player.updateCharacter(name, character);
                 validateSource(source);
-                const log = new Log('xp', author, xpChannel.id, xpLogBuilder(player, name, -xp, source));
+                const log = new Log('xp', author, xpChannel.id, xpLogBuilder(player, character, -xp, source));
 
                 await Promise.all([
                     updatePlayer(player),
