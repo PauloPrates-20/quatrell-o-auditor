@@ -331,29 +331,23 @@ module.exports = {
                     if (action === 'deposita') {
                         prevCharacter.subXp(originalAmount);
                         newCharacter.addXp(amount);
-                        player.updateCharacter(prevCharacter.name, prevCharacter);
-                        player.updateCharacter(newCharacter.name, newCharacter);
                     } else {
                         prevCharacter.addXp(originalAmount);
                         newCharacter.subXp(amount);
-                        player.updateCharacter(prevCharacter.name, prevCharacter);
-                        player.updateCharacter(newCharacter.name, newCharacter);
                     }
                 }
             } else {
                 if (action === 'deposita') {
                     prevCharacter.addXp(originalAmount);
                     newCharacter.addXp(amount);
-                    player.updateCharacter(prevCharacter.name, prevCharacter);
-                    player.updateCharacter(newCharacter.name, newCharacter);
                 } else {
                     prevCharacter.subXp(originalAmount);
                     newCharacter.subXp(amount);
-                    player.updateCharacter(prevCharacter.name, prevCharacter);
-                    player.updateCharacter(newCharacter.name, newCharacter);
                 }
             }
 
+            player.updateCharacter(prevCharacter.name, prevCharacter);
+            player.updateCharacter(newCharacter.name, newCharacter);
             const log = new Log('xp', author, channel.id, xpLogBuilder(player, name, action === 'retira' ? -amount : amount, source));
 
             try {
