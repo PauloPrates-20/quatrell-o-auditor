@@ -105,8 +105,8 @@ module.exports = {
                 ]);
 
                 await interaction.editReply(`${amount} Gema(s) ${GemTypes[type as keyof Gems]} retirada(s) com sucesso.`);
-            } catch (error) {
-                await interaction.editReply(`Falha ao retirar gemas: ${error}`);
+            } catch (e: any) {
+                await interaction.editReply(`Falha ao retirar gemas: ${e.message}`);
             }
         }
     },
