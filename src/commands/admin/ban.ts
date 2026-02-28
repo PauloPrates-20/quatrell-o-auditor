@@ -4,52 +4,52 @@ import { loadPlayer, deletePlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('ban')
-    .setDescription('Bane um jogador do servidor e apaga seus dados.')
-    .addUserOption(option =>
-      option
-        .setName('jogador')
-        .setDescription('Jogador a banir')
-        .setRequired(true)
-    )
-    .addStringOption(option =>
-      option
-        .setName('motivo')
-        .setDescription('Motivo do banimento.')
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
-  async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ flags: 'Ephemeral' });
+    data: new SlashCommandBuilder()
+        .setName('ban')
+        .setDescription('Bane um jogador do servidor e apaga seus dados.')
+        .addUserOption(option =>
+            option
+                .setName('jogador')
+                .setDescription('Jogador a banir')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option
+                .setName('motivo')
+                .setDescription('Motivo do banimento.')
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    async execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply({ flags: 'Ephemeral' });
 
-    const generalChannel = interaction.client.channels.cache.get(channels.general!) as TextChannel;
-    const target = interaction.options.getUser('jogador')!.id;
-    const reason = interaction.options.getString('motivo') ?? 'Motivo não especificado.';
+        const generalChannel = interaction.client.channels.cache.get(channels.general!) as TextChannel;
+        const target = interaction.options.getUser('jogador')!.id;
+        const reason = interaction.options.getString('motivo') ?? 'Motivo não especificado.';
 
-    if (target === interaction.user.id) {
-      await interaction.editReply('Não é possível banir a si mesmo.');
-      return;
-    }
+        if (target === interaction.user.id) {
+            await interaction.editReply('Não é possível banir a si mesmo.');
+            return;
+        }
 
-    let player = false;
+        let player = false;
 
-    try {
-      player = !!(await loadPlayer(target));
-    } catch(e) {}
+        try {
+            player = !!(await loadPlayer(target));
+        } catch (e) { }
 
-    let deleted = false;
+        let deleted = false;
 
-    if (player) {
-      try {
-        await deletePlayer(target);
-        deleted = true;
-      } catch (error) {
-        await interaction.editReply(`Falha ao deletar dados do jogador: ${error}`);
-      }
-    }
+        try {
+            if(player) {
+                await deletePlayer(target);
+                deleted = true;
+            }
 
-    interaction.guild!.members.ban(target, { reason: reason! });
-    await interaction.editReply(`Usuário <@${target}> banido. ${deleted ? 'Dados do jogador deletados.' : 'Sem dados do jogador para deletar.'}`);
-    generalChannel.send(`Usuário <@${target}> banido por: ${reason}`);
-  },
+            interaction.guild!.members.ban(target, { reason: reason! });
+            await interaction.editReply(`Usuário <@${target}> banido. ${deleted ? 'Dados do jogador deletados.' : 'Sem dados do jogador para deletar.'}`);
+            generalChannel.send(`Usuário <@${target}> banido por: ${reason}`);
+        } catch (e: any) {
+            await interaction.editReply(`Falha ao deletar dados do jogador: ${e.message}`);
+        }
+    },
 };
