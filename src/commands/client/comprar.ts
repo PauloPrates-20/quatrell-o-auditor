@@ -51,13 +51,6 @@ module.exports = {
         try {
             player = await loadPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
-        } catch (e: any) {
-            await interaction.editReply(e.message);
-            return;
-        }
-
-
-        try {
             player.subGold(price);
 
             const purchaseLog = new Log('purchase', author, purchaseChannel.id, purchaseLogBuilder(author, character, item, amount, price));
