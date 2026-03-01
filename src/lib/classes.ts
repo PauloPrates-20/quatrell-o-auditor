@@ -1,5 +1,5 @@
 import { levelsTable, tiersTable } from './tables';
-import { Gems, CharacterDef } from './definitions';
+import { Gems, CharacterDef, Item } from './definitions';
 
 export class Player {
 	id: string;
@@ -138,27 +138,35 @@ export class Player {
 	}
 }
 
-export class Character {
+export class Character implements CharacterDef {
 	name: string;
 	xp: number;
 	level: number;
 	tier: string;
+    inventory: Item[];
+    attunements: number;
 
-	constructor({
-		name,
-		xp = 2,
-		level = 3,
-		tier = tiersTable[0].tier,
-	}: {
-		name: string;
-		xp?: number;
-		level?: number;
-		tier?: string;
-	}) {
+	constructor({ 
+        name, 
+        xp = 2, 
+        level = 3, 
+        tier = tiersTable[0].tier, 
+        inventory = [], 
+        attunements = 0 
+    }: {
+        name: string;
+        xp?: number;
+        level?: number;
+        tier?: string;
+        inventory?: Item[];
+        attunements?: number;
+    }) {
 		this.name = name;
 		this.xp = xp;
 		this.level = level;
 		this.tier = tier;
+        this.inventory = inventory;
+        this.attunements = attunements;
 	}
 
 	// Add xp to a character
@@ -187,6 +195,67 @@ export class Character {
 		this.xp = amount;
 		this.updateLevel();
 	}
+
+    getItemIndex(name: string): number {
+        const index = this.inventory.findIndex(item => item.name === name);
+
+        if(index === -1) {
+            throw new Error('item não encontrado.');
+        }
+
+        return index;
+    }
+
+    getItem(name: string): Item {
+        return this.inventory[this.getItemIndex(name)];
+    }
+
+    addItem(item: Item) {
+        try {
+            const itemInInventory = this.getItem(item.name);
+            itemInInventory.count += item.count;
+        } catch(e: any) {
+            this.inventory.push(item);
+        }
+    }
+
+    removeItem(item: Item) {
+        const index = this.getItemIndex(item.name);
+        const itemInInventory = this.inventory[index];
+
+        if(item.count > itemInInventory.count) {
+            throw new Error('contagem de itens não pode ser inferior a 0.');
+        }
+
+        if(item.count === itemInInventory.count) {
+            this.inventory.splice(index, 1);
+            return;
+        }
+
+        itemInInventory.count -= item.count;
+    }
+
+    attuneItem(name: string) {
+        const item = this.getItem(name);
+
+        item.attuned = true;
+        this.attunements++;
+    }
+
+    deAttuneItem(name: string) {
+        const item = this.getItem(name);
+        
+        if(this.attunements === 0) {
+            throw new Error('nenhum item sintonizado.');
+        }
+
+        if(!item?.attuned) {
+            throw new Error('o item não está sintonizado.');
+        }
+
+        item.attuned = false;
+        this.attunements--;
+    }
 
 	// Changes character level
 	updateLevel() {
@@ -220,18 +289,5 @@ export class Log {
 		this.targets = targets;
 		this.channels = channels;
 		this.content = content;
-	}
-}
-
-export class Sanitizer {
-	static urlComponents(url: string): string[] {
-		const components = url.match(/\d{18,}/g);
-		const [guildId, channelId, messageId] = components!;
-
-		return [guildId, channelId, messageId];
-	}
-
-	static gemType(input: string) {
-		return input.normalize('NFD').replace(/\W/g, '').toLowerCase();
 	}
 }

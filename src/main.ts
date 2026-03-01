@@ -10,6 +10,7 @@ import { loadPlayer } from './lib/firebase/firestoreQuerys';
 import { CustomClient } from './lib/definitions';
 import express from 'express';
 import router from './router';
+import { Character } from './lib/classes';
 
 // initializes app
 const app = express();
@@ -67,7 +68,8 @@ client.on(Events.InteractionCreate, async interaction => {
             command.data.name === 'personagem' ||
             (command.data.name === 'corrigir' && interaction.options.getSubcommand() === 'xp') ||
             command.data.name === 'comprar' ||
-            command.data.name === 'vender'
+            command.data.name === 'vender' ||
+            command.data.name === 'bau'
         ) {
             const player = await loadPlayer((interaction.member as GuildMember).id);
 
@@ -96,6 +98,32 @@ client.on(Events.InteractionCreate, async interaction => {
                 // Respond with the filtered choices
                 await interaction.respond(filteredChoices.slice(0, 25));
             }
+
+            if((command.data.name === 'vender' || (command.data.name === 'bau' && interaction.options.getSubcommand() === 'retirar')) && focusedOption.name === 'item') {
+                let charName;
+                if(command.data.name === 'bau') {
+                    charName = interaction.options.data[0]?.options!.find(option => option.name === 'personagem')!.value;
+                } else {
+                    charName = interaction.options.data[0].value;
+                } 
+
+                try {
+                    const character = new Character({ ...player.getCharacter(charName as string)});
+                    const choices = character.inventory.map(item => {
+                        return {
+                            name: item.name,
+                            value: item.name
+                        }
+                    });
+
+                    const filteredChoices = choices.filter(choice => choice.name.includes(focusedOption.value));
+
+                    await interaction.respond(filteredChoices.slice(0, 25));
+                } catch(e: any) {
+                    await interaction.respond([]);
+                    return;
+                }
+            }
         } else if (command.data.name === 'ajustar' && interaction.options.getSubcommand() === 'xp') {
             const focusedOption = interaction.options.getFocused(true);
 
@@ -103,7 +131,6 @@ client.on(Events.InteractionCreate, async interaction => {
                 const options = interaction.options.data[0]?.options || [];
                 const jogadorOption = options.find(option => option.name === 'jogador');
                 const target = jogadorOption!.value;
-                console.log('Target member: ', target);
 
                 if (!target) {
                     console.error('Target member was not found.');
