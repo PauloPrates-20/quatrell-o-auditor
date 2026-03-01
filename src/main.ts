@@ -99,8 +99,13 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.respond(filteredChoices.slice(0, 25));
             }
 
-            if(focusedOption.name === 'item') {
-                const charName = interaction.options.data[0]?.options!.find(option => option.name === 'personagem')!.value;
+            if((command.data.name === 'vender' || (command.data.name === 'bau' && interaction.options.getSubcommand() === 'retirar')) && focusedOption.name === 'item') {
+                let charName;
+                if(command.data.name === 'bau') {
+                    charName = interaction.options.data[0]?.options!.find(option => option.name === 'personagem')!.value;
+                } else {
+                    charName = interaction.options.data[0].value;
+                } 
 
                 try {
                     const character = new Character({ ...player.getCharacter(charName as string)});

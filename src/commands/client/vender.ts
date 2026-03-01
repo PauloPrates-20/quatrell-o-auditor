@@ -3,7 +3,6 @@ import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firest
 import { Character, Log } from '../../lib/classes';
 import { goldLogBuilder, inventoryLogBuilder, vendingLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
-import { Item } from '../../lib/definitions';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,7 +11,7 @@ module.exports = {
         .addStringOption(option =>
             option
                 .setName('personagem')
-                .setDescription('Nome do personagem que receberá o item')
+                .setDescription('Nome do personagem que venderá o item')
                 .setRequired(true)
                 .setAutocomplete(true)
         )
@@ -21,18 +20,12 @@ module.exports = {
                 .setName('item')
                 .setDescription('Nome do item')
                 .setRequired(true)
+                .setAutocomplete(true)
         )
         .addIntegerOption(option =>
             option
                 .setName('quantidade')
-                .setDescription('Quantidade de items a comprar')
-                .setMinValue(1)
-                .setRequired(true)
-        )
-        .addIntegerOption(option =>
-            option
-                .setName('preço')
-                .setDescription('Preço unitário do item vendido (preço cheio)')
+                .setDescription('Quantidade de items a vender')
                 .setMinValue(1)
                 .setRequired(true)
         ),
@@ -45,19 +38,15 @@ module.exports = {
         const charName = interaction.options.getString('personagem')!;
         const itemName = interaction.options.getString('item')!;
         const amount = interaction.options.getInteger('quantidade')!;
-        const price = Math.floor(interaction.options.getInteger('preço')! * amount / 2);
         const vendingChannel = interaction.client.channels.cache.get(channels.shop!) as TextChannel;
         const bankChannel = interaction.client.channels.cache.get(channels.bank!) as TextChannel;
         const inventoryChannel = interaction.client.channels.cache.get(channels.inventory!) as TextChannel;
 
         try {
-            const item: Item = {
-                name: itemName,
-                count: amount,
-                price: price,
-            }
             player = await loadPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
+            const item = { ...character.getItem(itemName), count: amount };
+            const price = item.price / 2;
             character.removeItem(item);
             player.updateCharacter(charName, character);
             player.addGold(price);
