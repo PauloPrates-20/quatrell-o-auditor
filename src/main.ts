@@ -69,7 +69,8 @@ client.on(Events.InteractionCreate, async interaction => {
             (command.data.name === 'corrigir' && interaction.options.getSubcommand() === 'xp') ||
             command.data.name === 'comprar' ||
             command.data.name === 'vender' ||
-            command.data.name === 'bau'
+            command.data.name === 'bau' ||
+            command.data.name === 'sintonia'
         ) {
             const player = await loadPlayer((interaction.member as GuildMember).id);
 
@@ -99,9 +100,14 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.respond(filteredChoices.slice(0, 25));
             }
 
-            if((command.data.name === 'vender' || (command.data.name === 'bau' && interaction.options.getSubcommand() === 'retirar')) && focusedOption.name === 'item') {
+            if(
+                (
+                    command.data.name === 'vender' ||
+                    (command.data.name === 'bau' && interaction.options.getSubcommand() === 'retirar') ||
+                    command.data.name === 'sintonia'
+                ) && focusedOption.name === 'item') {
                 let charName;
-                if(command.data.name === 'bau') {
+                if(command.data.name === 'bau' || command.data.name === 'sintonia') {
                     charName = interaction.options.data[0]?.options!.find(option => option.name === 'personagem')!.value;
                 } else {
                     charName = interaction.options.data[0].value;

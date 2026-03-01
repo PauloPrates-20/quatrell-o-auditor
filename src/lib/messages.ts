@@ -55,7 +55,7 @@ export function vendingLogBuilder(target: string, character: Character, item: st
 }
 
 export function inventoryLogBuilder(target: string, action: 'retira' | 'deposita', character: Character, item: Item, source: string) {
-    const actionText = action === 'retira' ? 'Retira' : 'Deposita';
+    const actionText = action.charAt(0).toUpperCase() + action.slice(1);
     let itemList = '';
 
     for(const it of character.inventory) {
@@ -65,4 +65,34 @@ export function inventoryLogBuilder(target: string, action: 'retira' | 'deposita
     const message = `Jogador: <@${target}>\nPersonagem: ${character.name}\n${actionText}: ${item.count}x ${item.name}\nOrigem: ${source}\nItens no báu:\n${itemList}`;
 
     return message
-} 
+}
+
+export function attuneLogBuilder(target: string, action: 'sintoniza' | 'dessintoniza', character: Character, item: Item) {
+    const actionText = action.charAt(0).toUpperCase() + action.slice(1);
+    const startDate = new Date();
+    
+    const startDay = String(startDate.getDate()).padStart(2, '0');
+    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const startYear = String(startDate.getFullYear());
+
+    const startHour = String(startDate.getHours()).padStart(2, '0');
+    const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+
+    startDate.setHours(startDate.getHours() + 1);
+
+    const endDate = startDate;
+
+    const endDay = String(endDate.getDate()).padStart(2, '0');
+    const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+    const endYear = String(endDate.getFullYear());
+
+    const endHour = String(endDate.getHours()).padStart(2, '0');
+    const endMinute = String(endDate.getMinutes()).padStart(2, '0');
+
+    const startString = `${startDay}/${startMonth}/${startYear} ${startHour}:${startMinute}`;
+    const endString = `${endDay}/${endMonth}/${endYear} ${endHour}:${endMinute}`;
+
+    const message = `Jogador: <@${target}>\nPersonagem: ${character.name}\n${actionText}: ${item.name}\nData e Hora de Início: ${startString}\nData e Hora de Témino: ${endString}\nItens Sintonizados: ${character.attunements}/3`;
+
+    return message;
+}

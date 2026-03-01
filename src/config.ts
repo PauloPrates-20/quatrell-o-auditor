@@ -26,6 +26,7 @@ const {
     CHANNELS_GENERAL,
     CHANNELS_SHOP,
     CHANNELS_INVENTORY,
+    CHANNELS_MAGIC,
     FIREBASE_API_KEY,
     FIREBASE_AUTH_DOMAIN,
     FIREBASE_PROJECT_ID,
@@ -62,4 +63,5 @@ export const channels = {
     general: CHANNELS_GENERAL,
     shop: CHANNELS_SHOP,
     inventory: CHANNELS_INVENTORY,
+    magic: CHANNELS_MAGIC,
 };
