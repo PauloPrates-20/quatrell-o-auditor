@@ -156,7 +156,7 @@ export class Character implements CharacterDef {
     }: {
         name: string;
         xp?: number;
-        level: number;
+        level?: number;
         tier?: string;
         inventory?: Item[];
         attunements?: number;
@@ -289,18 +289,5 @@ export class Log {
 		this.targets = targets;
 		this.channels = channels;
 		this.content = content;
-	}
-}
-
-export class Sanitizer {
-	static urlComponents(url: string): string[] {
-		const components = url.match(/\d{18,}/g);
-		const [guildId, channelId, messageId] = components!;
-
-		return [guildId, channelId, messageId];
-	}
-
-	static gemType(input: string) {
-		return input.normalize('NFD').replace(/\W/g, '').toLowerCase();
 	}
 }
