@@ -1,5 +1,5 @@
 import { Character, Player } from './classes';
-import { Gems, Actions } from './definitions';
+import { Gems, Actions, Item } from './definitions';
 
 // Builds the messages used for the logs in the channel #banco
 export function goldLogBuilder(player: Player, action: Actions, amount: number, source: string) {
@@ -53,3 +53,16 @@ export function vendingLogBuilder(target: string, character: Character, item: st
 
     return message;
 }
+
+export function inventoryLogBuilder(target: string, action: 'retira' | 'deposita', character: Character, item: Item, source: string) {
+    const actionText = action === 'retira' ? 'Retira' : 'Deposita';
+    let itemList = '';
+
+    for(const it of character.inventory) {
+        itemList += `- ${it.count}x ${it.name}\n`;
+    }
+
+    const message = `Jogador: <@${target}>\nPersonagem: ${character.name}\n${actionText}: ${item.count}x ${item.name}\nOrigem: ${source}\nItens no báu:\n${itemList}`;
+
+    return message
+} 
