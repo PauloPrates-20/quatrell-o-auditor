@@ -1,7 +1,7 @@
 /* Imports */
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder, TextChannel } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Character, Log, Sanitizer } from '../../lib/classes';
+import { Character, Log } from '../../lib/classes';
 import { validateSource } from '../../lib/validation';
 import { channels } from '../../config';
 import { xpLogBuilder } from '../../lib/messages';

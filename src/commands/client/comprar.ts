@@ -1,6 +1,6 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
-import { Character, Log, Sanitizer } from '../../lib/classes';
+import { Character, Log } from '../../lib/classes';
 import { goldLogBuilder, purchaseLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 

@@ -4,7 +4,7 @@ import { loadPlayer, updatePlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
-import { Character, Player, Sanitizer } from '../../lib/classes';
+import { Character } from '../../lib/classes';
 
 module.exports = {
     data: new SlashCommandBuilder()
