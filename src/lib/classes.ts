@@ -223,6 +223,10 @@ export class Character implements CharacterDef {
         const index = this.getItemIndex(item.name);
         const itemInInventory = this.inventory[index];
 
+        if(item.attuned === true) {
+            throw new Error('dessintonize o item antes de remover.');
+        }
+
         if(item.count > itemInInventory.count) {
             throw new Error('contagem de itens não pode ser inferior a 0.');
         }
@@ -237,6 +241,10 @@ export class Character implements CharacterDef {
 
     attuneItem(name: string) {
         const item = this.getItem(name);
+
+        if(item?.attuned) {
+            throw new Error('item já sintonizado.');
+        }
 
         item.attuned = true;
         this.attunements++;
