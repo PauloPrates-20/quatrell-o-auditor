@@ -4,7 +4,10 @@ import { collections } from '../../config';
 import { Player, Log } from '../classes';
 import { firebaseServiceAccount } from '../../config';
 
-admin.initializeApp({ credential: admin.credential.cert(firebaseServiceAccount)});
+if(admin.apps.length === 0) {
+    admin.initializeApp({ credential: admin.credential.cert(firebaseServiceAccount)});
+}
+
 const db = admin.firestore();
 const { FieldValue } = admin.firestore;
 
