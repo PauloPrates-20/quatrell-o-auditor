@@ -1,43 +1,43 @@
 // Initializes firestore
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, collection, getDoc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import admin from 'firebase-admin';
 import { collections } from '../../config';
 import { Player, Log } from '../classes';
-import { firebaseConfig } from '../../config';
+import { firebaseServiceAccount } from '../../config';
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+admin.initializeApp({ credential: admin.credential.cert(firebaseServiceAccount)});
+const db = admin.firestore();
+const { FieldValue } = admin.firestore;
 
 /* Firestore custom querys */
 
 // Player register function
 export async function registerPlayer(playerData: Player) {
 	// Sets doc reference and convert the data to firestore Map
-	const ref = doc(db, collections.users!, playerData.id);
+	const ref = db.collection(collections.users).doc(playerData.id);
 	const convertedPlayer = Object.assign({}, playerData);
 
-	await setDoc(ref, convertedPlayer);
+	await ref.set(convertedPlayer);
 
 	console.log(`Player ${playerData.id} registered successfuly.`);
 }
 
 // Log register function
 export async function registerLog(logData: Log, playerId: string) {
-	const ref = collection(db, collections.users!, playerId.toString(), 'logs');
+	const ref = db.collection(collections.users).doc(playerId).collection('logs');
 	const convertedLog = {
 		...logData,
-		timestamp: serverTimestamp(),
+		timestamp: FieldValue.serverTimestamp(),
 	};
 
-	await addDoc(ref, convertedLog);
+	await ref.add(convertedLog);
 	console.log(`Log registered succesfully for player ${playerId}.`);
 }
 
 // Load player function
 export async function loadPlayer(playerId: string): Promise<Player> {
-	const ref = doc(db, collections.users!, playerId);
+	const ref = db.collection(collections.users).doc(playerId);
 
-	const querySnapshot = await getDoc(ref);
+	const querySnapshot = await ref.get();
 	const data = querySnapshot.data();
 
 	if (!data) {
@@ -49,18 +49,18 @@ export async function loadPlayer(playerId: string): Promise<Player> {
 
 // Update player function
 export async function updatePlayer(playerData: Player) {
-	const ref = doc(db, collections.users!, playerData.id);
+	const ref = db.collection(collections.users).doc(playerData.id);
 
 	const data: any = Object.assign({}, playerData);
 	delete data.id;
 
-	await updateDoc(ref, data);
+	await ref.update(data);
 	console.log(`Player ${playerData.id} updated successfuly`);
 }
 
 export async function deletePlayer(playerId: string) {
-	const ref = doc(db, collections.users!, playerId.toString());
+	const ref = db.collection(collections.users).doc(playerId);
 
-	await deleteDoc(ref);
+	ref.delete();
 	console.log(`Player ${playerId} deleted successfully.`);
 }
