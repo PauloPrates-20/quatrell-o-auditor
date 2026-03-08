@@ -26,4 +26,6 @@ export type Item = {
     price: number;
     count: number;
     attuned?: boolean;
+    baseItem?: string;
+    shortName?: string;
 }

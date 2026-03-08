@@ -46,6 +46,11 @@ module.exports = {
                         .setDescription('Link da mensagem ou motivo do depósito.')
                         .setRequired(true)
                 )
+                .addStringOption(option =>
+                    option
+                        .setName('itembase')
+                        .setDescription('Nome do item base caso este item já tenha sido reforjado')
+                )
         )
         .addSubcommand(subcommand => 
             subcommand
@@ -102,10 +107,17 @@ module.exports = {
 
         if(subcommand === 'depositar') {
             const price = interaction.options.getInteger('preço')!;
+            const baseItem = interaction.options.getString('itembase');
             const item: Item = {
                 name: itemName,
                 price,
                 count: amount,
+            }
+
+            if(baseItem) {
+                item.baseItem = baseItem;
+                item.shortName = item.name;
+                item.name += ` (${baseItem})`;
             }
 
             try {
@@ -120,7 +132,7 @@ module.exports = {
                     inventoryChannel.send(log.content),
                 ]);
 
-                await interaction.editReply(`${amount}x ${itemName} depositado(s) com sucesso.`);
+                await interaction.editReply(`${amount}x ${item.name} depositado(s) com sucesso.`);
             } catch(e: any) {
                 await interaction.editReply(`Falha ao depositar itens: ${e.message}`);
             }
@@ -139,7 +151,7 @@ module.exports = {
                     inventoryChannel.send(log.content),
                 ]);
 
-                await interaction.editReply(`${amount}x ${itemName} retirado(s) com sucesso.`);
+                await interaction.editReply(`${amount}x ${item.name} retirado(s) com sucesso.`);
             } catch(e: any) {
                 await interaction.editReply(`Falha ao retirar itens: ${e.message}`);
             }
