@@ -96,3 +96,13 @@ export function attuneLogBuilder(target: string, action: 'sintoniza' | 'dessinto
 
     return message;
 }
+
+export function reforgeLogBuilder(target: string, character: Character, oldItem: string, newItem: string, price: number) {
+    const playerLine = `Jogador: <@${target}>\n`;
+    const characterLine = `Personagem: ${character.name}\n`;
+    const oldItemLine = `Item Anterior: ${oldItem}\n`;
+    const newItemLine = `Item Reforjado: ${newItem}\n`;
+    const priceLine = `Valor Pago: ${price} PO`;
+
+    return playerLine + characterLine + oldItemLine + newItemLine + priceLine;
+}
