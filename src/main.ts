@@ -70,7 +70,8 @@ client.on(Events.InteractionCreate, async interaction => {
             command.data.name === 'comprar' ||
             command.data.name === 'vender' ||
             command.data.name === 'bau' ||
-            command.data.name === 'sintonia'
+            command.data.name === 'sintonia' ||
+            command.data.name === 'reforjar'
         ) {
             const player = await loadPlayer((interaction.member as GuildMember).id);
 
@@ -104,7 +105,8 @@ client.on(Events.InteractionCreate, async interaction => {
                 (
                     command.data.name === 'vender' ||
                     (command.data.name === 'bau' && interaction.options.getSubcommand() === 'retirar') ||
-                    command.data.name === 'sintonia'
+                    command.data.name === 'sintonia' ||
+                    command.data.name === 'reforjar'
                 ) && focusedOption.name === 'item') {
                 let charName;
                 if(command.data.name === 'bau' || command.data.name === 'sintonia') {

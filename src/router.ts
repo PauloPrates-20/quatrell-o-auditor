@@ -43,10 +43,10 @@ export default router
             const bankChannel = client.channels.cache.get(channels.bank!) as TextChannel;
             const inventoryChannel = client.channels.cache.get(channels.inventory!) as TextChannel;
             const inventoryItem: Item = {
-                name: (item.name as string),
+                name: item.name,
+                shortName: item.name,
                 count: 1,
                 price: (item.value as number),
-                attuned: false,
             };
 
             player.subGold(inventoryItem.price);
@@ -104,27 +104,41 @@ export default router
             const forgeChannel = client.channels.cache.get(channels.forge!) as TextChannel;
             const bankChannel = client.channels.cache.get(channels.bank!) as TextChannel;
             const inventoryChannel = client.channels.cache.get(channels.inventory!) as TextChannel;
+            const oldItem = { ...character.getItem(baseItem), count: 1 };
             const newItem: Item = {
-                name: (item.name as string),
+                name: item.name + ` (${baseItem})`,
+                shortName: item.name,
                 count: 1,
-                price: (item.value as number),
-                attuned: false,
+                price: item.value,
+                baseItem: baseItem,
             };
-            const oldItem = character.getItem(baseItem);
-            const price = isUpgrade ? newItem.price - oldItem.price : newItem.price;
 
-            if(price < 0) {
-                throw new Error('Valor do upgrade não pode ser negativo.');
+            if(oldItem.attuned) {
+                newItem.attuned = oldItem.attuned;
             }
 
-            player.subGold(price);
+            if(isUpgrade) {
+                if(!oldItem.baseItem) {
+                    throw new Error('o item selecionado está na forma base.')
+                }
+
+                newItem.baseItem = oldItem.baseItem;
+                newItem.name = newItem.shortName + ` (${newItem.baseItem})`;
+                item.value -= oldItem.price;
+
+                if(item.value < 0) {
+                    throw new Error('valor do upgrade não pode ser inferior a 0 PO.');
+                }
+            }
+
+            player.subGold(item.value);
             character.removeItem(oldItem);
             character.addItem(newItem);
             player.updateCharacter(character.name, character);
 
-            const reforgeLog = new Log('purchase', playerId, forgeChannel?.id, reforgeLogBuilder(playerId, character, oldItem.name, newItem.name, price));
+            const reforgeLog = new Log('purchase', playerId, forgeChannel?.id, reforgeLogBuilder(playerId, character, oldItem, newItem, item.value));
             const refogeMessage = await forgeChannel.send(reforgeLog.content);
-            const goldLog = new Log('gold', playerId, bankChannel.id, goldLogBuilder(player, 'retira', price, refogeMessage.url));
+            const goldLog = new Log('gold', playerId, bankChannel.id, goldLogBuilder(player, 'retira', newItem.price, refogeMessage.url));
             const oldInverotyLog = new Log('item', playerId, inventoryChannel.id, inventoryLogBuilder(playerId, 'retira', character, oldItem, refogeMessage.url));
             const newInventoryLog = new Log('item', playerId, inventoryChannel.id, inventoryLogBuilder(playerId, 'deposita', character, newItem, refogeMessage.url));
 

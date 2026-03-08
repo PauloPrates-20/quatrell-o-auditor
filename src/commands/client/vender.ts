@@ -46,7 +46,7 @@ module.exports = {
             player = await loadPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
             const item = { ...character.getItem(itemName), count: amount };
-            const price = item.price / 2;
+            const price = Math.floor((item.price / 2)) * amount;
             character.removeItem(item);
             player.updateCharacter(charName, character);
             player.addGold(price);

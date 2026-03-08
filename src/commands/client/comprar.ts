@@ -54,7 +54,7 @@ module.exports = {
             const item: Item = { 
                 name: itemName,
                 count: amount,
-                price: price,
+                price: price / amount,
             }
             player = await loadPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
