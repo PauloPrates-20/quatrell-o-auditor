@@ -52,6 +52,7 @@ export default router
 
             player.subGold(inventoryItem.price);
             character.addItem(inventoryItem);
+            player.updateCharacter(character.name, character);
 
             const purchaseLog = new Log('purchase', playerId, purchaseChannel?.id, purchaseLogBuilder(playerId, character, item.name, 1, item.value));
             const purchaseMessage = await purchaseChannel.send(purchaseLog.content);
