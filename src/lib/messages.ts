@@ -67,14 +67,15 @@ export function inventoryLogBuilder(target: string, action: 'retira' | 'deposita
     return message
 }
 
-export function attuneLogBuilder(target: string, action: 'sintoniza' | 'dessintoniza', character: Character, item: Item) {
+export function attuneLogBuilder(target: string, action: 'sintoniza' | 'dessintoniza', character: Character, item: Item, start: string) {
     const actionText = action.charAt(0).toUpperCase() + action.slice(1);
     const startDate = new Date();
     
     const startDay = String(startDate.getDate()).padStart(2, '0');
     const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
     const startYear = String(startDate.getFullYear());
-
+    const [hours, minutes] = start.split(':').map(Number);
+    startDate.setHours(hours, minutes, 0, 0);
     const startHour = String(startDate.getHours()).padStart(2, '0');
     const startMinute = String(startDate.getMinutes()).padStart(2, '0');
 

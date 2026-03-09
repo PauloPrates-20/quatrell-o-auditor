@@ -27,6 +27,12 @@ module.exports = {
                         .setRequired(true)
                         .setAutocomplete(true)
                 )
+                .addStringOption(option =>
+                    option
+                        .setName('inicio')
+                        .setDescription('Horário de início (HH:mm)')
+                        .setRequired(true)
+                )
         )
         .addSubcommand(subcommand => 
             subcommand
@@ -46,6 +52,12 @@ module.exports = {
                         .setRequired(true)
                         .setAutocomplete(true)
                 )
+                .addStringOption(option =>
+                    option
+                        .setName('inicio')
+                        .setDescription('Horário de início (HH:mm)')
+                        .setRequired(true)
+                )
         ),
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ flags: 'Ephemeral' });
@@ -56,8 +68,14 @@ module.exports = {
         let item: Item;
         const charName = interaction.options.getString('personagem')!;
         const itemName = interaction.options.getString('item')!;
+        const time = interaction.options.getString('inicio')!;
         const subcommand = interaction.options.getSubcommand();
         const magicChannel = interaction.client.channels.cache.get(channels.magic!) as TextChannel;
+
+        if(!time.match(/\d{2}:\d{2}/)) {
+            await interaction.editReply('Horário inválido, utilize o formato HH:mm.');
+            return;
+        }
 
         try {
             player = await loadPlayer(author);
@@ -73,7 +91,7 @@ module.exports = {
                 character.attuneItem(itemName);
                 player.updateCharacter(charName, character);
                 
-                const log = new Log('item', author, magicChannel.id, attuneLogBuilder(author, 'sintoniza', character, item));
+                const log = new Log('item', author, magicChannel.id, attuneLogBuilder(author, 'sintoniza', character, item, time));
 
                 await Promise.all([
                     updatePlayer(player),
@@ -90,7 +108,7 @@ module.exports = {
                 character.deAttuneItem(itemName);
                 player.updateCharacter(charName, character);
 
-                const log = new Log('item', author, magicChannel.id, attuneLogBuilder(author, 'dessintoniza', character, item));
+                const log = new Log('item', author, magicChannel.id, attuneLogBuilder(author, 'dessintoniza', character, item, time));
 
                 await Promise.all([
                     updatePlayer(player),
