@@ -10,6 +10,9 @@ import { Item } from './lib/definitions';
 const router = Router();
 
 export default router
+    .get('/teste', async (req: Request, res: Response) => {
+        res.status(200).send("OK");
+    })
     .post('/buy', async (req: Request, res: Response) => {
         const { accessToken, item, charName } = req.body;
 
