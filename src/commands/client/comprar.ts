@@ -1,9 +1,10 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Character, Log } from '../../lib/classes';
 import { goldLogBuilder, inventoryLogBuilder, purchaseLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Item } from '../../lib/definitions';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -56,7 +57,7 @@ module.exports = {
                 count: amount,
                 price: price / amount,
             }
-            player = await loadPlayer(author);
+            player = getPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
             character.addItem(item);
             player.updateCharacter(charName, character);

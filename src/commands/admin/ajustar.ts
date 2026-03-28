@@ -1,10 +1,11 @@
 /* Imports */
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, TextChannel } from 'discord.js';
-import { loadPlayer, updatePlayer } from '../../lib/firebase/firestoreQuerys';
+import { updatePlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
 import { Character } from '../../lib/classes';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -97,7 +98,7 @@ module.exports = {
         const xpChannel = interaction.client.channels.cache.get(channels.xp!) as TextChannel;
 
         try {
-            player = await loadPlayer(target);
+            player = getPlayer(target);
         } catch (e: any) {
             console.error(e);
             await interaction.editReply(e.message);

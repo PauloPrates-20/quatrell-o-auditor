@@ -1,7 +1,8 @@
 /* Imports */
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, registerPlayer } from '../../lib/firebase/firestoreQuerys';
+import { registerPlayer } from '../../lib/firebase/firestoreQuerys';
 import { Player } from '../../lib/classes';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,7 +14,7 @@ module.exports = {
         let player;
 
         try {
-            player = await loadPlayer(author);
+            player = getPlayer(author);
         } catch (e) { }
 
         if (player) {

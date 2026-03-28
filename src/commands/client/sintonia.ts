@@ -1,9 +1,10 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder, InteractionResponse } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 import { Character, Log, Player } from '../../lib/classes';
 import { Item } from '../../lib/definitions';
 import { attuneLogBuilder } from '../../lib/messages';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -78,7 +79,7 @@ module.exports = {
         }
 
         try {
-            player = await loadPlayer(author);
+            player = getPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
             item = character.getItem(itemName);
         } catch(e: any) {

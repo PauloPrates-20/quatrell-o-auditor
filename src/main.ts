@@ -6,11 +6,24 @@ import path from 'node:path';
 import { Client, Events, Collection, GatewayIntentBits, UserResolvable, GuildMember } from 'discord.js';
 // Get the token
 import { token } from './config';
-import { loadPlayer } from './lib/firebase/firestoreQuerys';
+import { loadPlayers } from './lib/firebase/firestoreQuerys';
+import { getPlayer, setPlayerList } from './lib/listCache';
 import { CustomClient } from './lib/definitions';
 import express from 'express';
 import router from './router';
 import { Character } from './lib/classes';
+
+console.log('Initializing player list...');
+(async () => {
+    const list = await loadPlayers();
+    console.log(list.length + ' player loaded');
+    setPlayerList(list);
+    console.log('Player list cached.');
+})();
+setInterval(async () => {
+    const list = await loadPlayers();
+    setPlayerList(list);
+}, 60 * 60 * 1000);
 
 // initializes app
 const app = express();
@@ -73,7 +86,16 @@ client.on(Events.InteractionCreate, async interaction => {
             command.data.name === 'sintonia' ||
             command.data.name === 'reforjar'
         ) {
-            const player = await loadPlayer((interaction.member as GuildMember).id);
+            let player;
+            try {
+                player = getPlayer((interaction.member as GuildMember).id);
+            } catch (e) {
+                await interaction.respond([]);
+                if(e instanceof Error) {
+                    console.error(`[ERROR] ${e.message}\n${e}`);
+                }
+                return;
+            }
 
             // Respond with an empty array if player data is not found
             if (!player) {
@@ -147,7 +169,16 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
 
                 const targetMember = await interaction.guild!.members.fetch(target as UserResolvable);
-                const player = await loadPlayer(targetMember.id);
+                let player;
+                try {
+                    player = getPlayer(targetMember.id);
+                } catch (e) {
+                    await interaction.respond([]);
+                    if(e instanceof Error) {
+                        console.error(`[ERROR] ${e.message}\n${e}`);
+                    }
+                    return;
+                }
 
                 if (!player) {
                     await interaction.respond([]);

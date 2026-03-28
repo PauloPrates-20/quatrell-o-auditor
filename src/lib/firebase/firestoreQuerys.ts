@@ -3,6 +3,7 @@ import admin from 'firebase-admin';
 import { collections } from '../../config';
 import { Player, Log } from '../classes';
 import { firebaseServiceAccount } from '../../config';
+import { appendList, spliceList, updateList, setPlayerList } from '../listCache';
 
 if(admin.apps.length === 0) {
     admin.initializeApp({ credential: admin.credential.cert(firebaseServiceAccount)});
@@ -22,6 +23,9 @@ export async function registerPlayer(playerData: Player) {
 	await ref.set(convertedPlayer);
 
 	console.log(`Player ${playerData.id} registered successfuly.`);
+
+    // updates cached player list
+    appendList(playerData);
 }
 
 // Log register function
@@ -50,6 +54,21 @@ export async function loadPlayer(playerId: string): Promise<Player> {
 	return new Player({ ...(data as Player) });
 }
 
+export async function loadPlayers(): Promise<Player[]> {
+	const ref = db.collection(collections.users);
+
+	const querySnapshot = await ref.get();
+	const data: Player[] = [];
+
+	if (!querySnapshot.empty) {
+        for(const doc of querySnapshot.docs) {
+            data.push(new Player({ ...(doc.data() as Player) }));
+        }
+	}
+
+	return data;
+}
+
 // Update player function
 export async function updatePlayer(playerData: Player) {
 	const ref = db.collection(collections.users).doc(playerData.id);
@@ -59,6 +78,9 @@ export async function updatePlayer(playerData: Player) {
 
 	await ref.update(data);
 	console.log(`Player ${playerData.id} updated successfuly`);
+
+    // updates the cached player list
+    updateList(playerData);
 }
 
 export async function deletePlayer(playerId: string) {
@@ -66,4 +88,7 @@ export async function deletePlayer(playerId: string) {
 
 	ref.delete();
 	console.log(`Player ${playerId} deleted successfully.`);
+
+    // updates the cached player list
+    spliceList(playerId);
 }
