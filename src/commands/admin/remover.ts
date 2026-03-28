@@ -1,6 +1,7 @@
 /* Imports */
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember } from 'discord.js';
-import { loadPlayer, deletePlayer } from '../../lib/firebase/firestoreQuerys';
+import { getPlayer } from '../../lib/listCache';
+import { deletePlayer } from '../../lib/firebase/firestoreQuerys';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,7 +19,7 @@ module.exports = {
         const target = interaction.options.getUser('jogador')!.id;
 
         try {
-            await loadPlayer(target);
+            getPlayer(target);
             deletePlayer(target);
             await interaction.editReply(`Jogador <@${target}> deletado.`);
         } catch (e: any) {

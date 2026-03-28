@@ -1,9 +1,10 @@
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Character, Log } from '../../lib/classes';
 import { goldLogBuilder, inventoryLogBuilder, reforgeLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Item } from '../../lib/definitions';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -57,7 +58,7 @@ module.exports = {
         const inventoryChannel = interaction.client.channels.cache.get(channels.inventory!) as TextChannel;
 
         try {
-            player = await loadPlayer(author);
+            player = getPlayer(author);
             character = new Character({ ...player.getCharacter(charName) });
             const oldItem = { ...character.getItem(itemName), count: 1 };
             const newItem: Item = { 

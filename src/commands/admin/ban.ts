@@ -1,6 +1,7 @@
 /* Imports */
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, TextChannel } from 'discord.js';
-import { loadPlayer, deletePlayer } from '../../lib/firebase/firestoreQuerys';
+import { getPlayer } from '../../lib/listCache';
+import { deletePlayer } from '../../lib/firebase/firestoreQuerys';
 import { channels } from '../../config';
 
 module.exports = {
@@ -34,7 +35,7 @@ module.exports = {
         let player = false;
 
         try {
-            player = !!(await loadPlayer(target));
+            player = !!(getPlayer(target));
         } catch (e) { }
 
         let deleted = false;

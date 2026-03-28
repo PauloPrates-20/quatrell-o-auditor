@@ -1,11 +1,12 @@
 /* Imports */
 import { TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
 import { goldLogBuilder, gemLogBuilder, transferencyLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -73,10 +74,8 @@ module.exports = {
         const transferencyChannel = interaction.client.channels.cache.get(channels.transferencies!) as TextChannel;
 
         try {
-            [authorPlayer, targetPlayer] = await Promise.all([
-                loadPlayer(author),
-                loadPlayer(target),
-            ]);
+            authorPlayer = getPlayer(author);
+            targetPlayer = getPlayer(target);
         } catch(e: any) {
             await interaction.editReply(e.message);
             return;

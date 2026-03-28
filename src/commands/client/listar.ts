@@ -1,7 +1,6 @@
 /* Imports */
-import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
-import { loadPlayer } from '../../lib/firebase/firestoreQuerys';
-import { CharacterDef } from '../../lib/definitions';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,7 +13,7 @@ module.exports = {
         let player;
 
         try {
-            player = await loadPlayer(author);
+            player = getPlayer(author);
         } catch(e: any) {
             await interaction.editReply(e.message);
             return;

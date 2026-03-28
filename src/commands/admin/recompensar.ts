@@ -1,11 +1,12 @@
 /* Imports */
 import { SlashCommandBuilder, PermissionFlagsBits, ChatInputCommandInteraction, GuildMember, BaseGuildTextChannel, TextChannel } from 'discord.js';
-import { loadPlayer, updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
+import { updatePlayer, registerLog } from '../../lib/firebase/firestoreQuerys';
 import { Log } from '../../lib/classes';
 import { goldLogBuilder, gemLogBuilder } from '../../lib/messages';
 import { channels } from '../../config';
 import { Gems } from '../../lib/definitions';
 import { GemTypes } from '../../lib/tables';
+import { getPlayer } from '../../lib/listCache';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -69,7 +70,7 @@ module.exports = {
         const treasureChannel = interaction.client.channels.cache.get(channels.treasure!) as TextChannel;
 
         try {
-            player = await loadPlayer(target);
+            player = getPlayer(target);
         } catch (e: any) {
             await interaction.reply(e.message);
             return;
