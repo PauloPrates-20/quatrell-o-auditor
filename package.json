@@ -10,7 +10,7 @@
         "build": "cross-env NODE_ENV=production tsup src --format cjs",
         "register:dev": "cross-env NODE_ENV=development tsx src/deploy-commands.ts",
         "register:prod": "cross-env NODE_ENV=production tsx src/deploy-commands.ts",
-        "update:prod": "register:prod && build"
+        "update:prod": "pnpm register:prod && pnpm build"
     },
     "author": "",
     "license": "ISC",
