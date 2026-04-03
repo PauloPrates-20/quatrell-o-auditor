@@ -13,25 +13,6 @@ import express from 'express';
 import router from './router';
 import { Character } from './lib/classes';
 
-console.log('Initializing player list...');
-(async () => {
-    const list = await loadPlayers();
-    console.log(list.length + ' player loaded');
-    setPlayerList(list);
-    console.log('Player list cached.');
-})();
-setInterval(async () => {
-    const list = await loadPlayers();
-    setPlayerList(list);
-}, 60 * 60 * 1000);
-
-// initializes app
-const app = express();
-app.use(express.json());
-app.use('/api', router);
-app.listen(5000, '0.0.0.0', () => {
-    console.log('API ready at port 5000!');
-})
 // Creates the client instace
 export const client: CustomClient = new Client({
     intents: [
@@ -91,7 +72,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 player = getPlayer((interaction.member as GuildMember).id);
             } catch (e) {
                 await interaction.respond([]);
-                if(e instanceof Error) {
+                if (e instanceof Error) {
                     console.error(`[ERROR] ${e.message}\n${e}`);
                 }
                 return;
@@ -123,7 +104,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.respond(filteredChoices.slice(0, 25));
             }
 
-            if(
+            if (
                 (
                     command.data.name === 'vender' ||
                     (command.data.name === 'bau' && interaction.options.getSubcommand() === 'retirar') ||
@@ -131,14 +112,14 @@ client.on(Events.InteractionCreate, async interaction => {
                     command.data.name === 'reforjar'
                 ) && focusedOption.name === 'item') {
                 let charName;
-                if(command.data.name === 'bau' || command.data.name === 'sintonia') {
+                if (command.data.name === 'bau' || command.data.name === 'sintonia') {
                     charName = interaction.options.data[0]?.options!.find(option => option.name === 'personagem')!.value;
                 } else {
                     charName = interaction.options.data[0].value;
-                } 
+                }
 
                 try {
-                    const character = new Character({ ...player.getCharacter(charName as string)});
+                    const character = new Character({ ...player.getCharacter(charName as string) });
                     const choices = character.inventory.map(item => {
                         return {
                             name: item.name,
@@ -149,7 +130,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     const filteredChoices = choices.filter(choice => choice.name.includes(focusedOption.value));
 
                     await interaction.respond(filteredChoices.slice(0, 25));
-                } catch(e: any) {
+                } catch (e: any) {
                     await interaction.respond([]);
                     return;
                 }
@@ -174,7 +155,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     player = getPlayer(targetMember.id);
                 } catch (e) {
                     await interaction.respond([]);
-                    if(e instanceof Error) {
+                    if (e instanceof Error) {
                         console.error(`[ERROR] ${e.message}\n${e}`);
                     }
                     return;
@@ -224,5 +205,25 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-// Login to discord with the token
-client.login(token);
+(async () => {
+    console.log('Initializing player list...');
+    const list = await loadPlayers();
+    console.log(list.length + ' player loaded');
+    setPlayerList(list);
+    console.log('Player list cached.');
+    setInterval(async () => {
+        const list = await loadPlayers();
+        setPlayerList(list);
+    }, 60 * 60 * 1000);
+
+    // initializes app
+    const app = express();
+    app.use(express.json());
+    app.use('/api', router);
+    app.listen(5000, '0.0.0.0', () => {
+        console.log('API ready at port 5000!');
+    })
+    
+    // Login to discord with the token
+    client.login(token);
+})();
