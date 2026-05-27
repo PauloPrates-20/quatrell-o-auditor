@@ -3,15 +3,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 // Require the necessary discord.js classes
-import { Client, Events, Collection, GatewayIntentBits, UserResolvable, GuildMember } from 'discord.js';
+import { Client, Events, Collection, GatewayIntentBits, UserResolvable, GuildMember, TextChannel } from 'discord.js';
 // Get the token
-import { token } from './config';
+import { channels, token } from './config';
 import { loadPlayers } from './lib/firebase/firestoreQuerys';
 import { getPlayer, setPlayerList } from './lib/listCache';
 import { CustomClient } from './lib/definitions';
 import express from 'express';
 import router from './router';
 import { Character } from './lib/classes';
+import { JobScheduler } from './lib/Scheduler/scheduler';
+import { buildMessage } from './lib/Scheduler/messages';
 
 // Creates the client instace
 export const client: CustomClient = new Client({
@@ -226,4 +228,13 @@ client.on(Events.InteractionCreate, async interaction => {
     
     // Login to discord with the token
     client.login(token);
+    const scheduler = new JobScheduler();
+    scheduler.alloc({ name: "Event Message", weekDay: 5, h: 18, m: 0, callback: eventJobCallback, lastCall: null})
 })();
+
+function eventJobCallback() {
+    const channel = client.channels.cache.get(channels.events!) as TextChannel;
+    const msg = buildMessage();
+
+    channel.send(msg);
+}

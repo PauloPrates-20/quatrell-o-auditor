@@ -11,3 +11,6 @@ test.*
 out/
 dist/
 build/
+
+# Control files
+src/lib/Scheduler/stats.json
