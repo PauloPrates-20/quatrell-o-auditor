@@ -28,6 +28,7 @@ const {
     CHANNELS_INVENTORY,
     CHANNELS_MAGIC,
     CHANNELS_FORGE,
+    CHANNELS_EVENTS,
     FIREBASE_SERVICE_ACCOUNT,
     COLLECTIONS_USERS
 } = process.env;
@@ -54,4 +55,5 @@ export const channels = {
     inventory: CHANNELS_INVENTORY,
     magic: CHANNELS_MAGIC,
     forge: CHANNELS_FORGE,
+    events: CHANNELS_EVENTS,
 };

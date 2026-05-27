@@ -29,3 +29,12 @@ export type Item = {
     baseItem?: string;
     shortName?: string;
 }
+
+export type Job = {
+    name: string;
+    weekDay: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    h: number;
+    m: number;
+    callback: () => void;
+    lastCall: number | null;
+};
