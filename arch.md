@@ -22,6 +22,8 @@
 │       └── messageControl.json
 ├── lib/
 │   ├── Services/
+│   │   ├── Adventure/
+│   │   │   └── adventure.ts
 │   │   ├── Scheduler/
 │   │   │   └── scheduler.ts
 │   │   ├── Bank/
@@ -41,19 +43,22 @@
 │   │   │   ├── bankMessages.ts
 │   │   │   ├── treasureMessages.ts
 │   │   │   └── characterMessages.ts
-│   │   └── CommandHandler/
-│   │       ├── deploy-commands.ts
-│   │       ├── handleAutocomplete.ts
-│   │       ├── handleStandard.ts
-│   │       └── handleCollection.ts
+│   │   ├── CommandHandler/
+│   │   │   ├── deploy-commands.ts
+│   │   │   ├── handleAutocomplete.ts
+│   │   │   ├── handleStandard.ts
+│   │   │   └── handleCollection.ts
+│   │   └── Logger/
+│   │       ├── logger.ts
+│   │       └── logBuilder.ts
 │   ├── Entities/
 │   │   ├── Player.ts
 │   │   ├── Character.ts
 │   │   ├── Log.ts
-│   │   └── Gem.ts
+│   │   ├── Gem.ts
+│   │   └── Adventure.ts
 │   └── Cache/
 │       ├── playerList.ts
 │       └── history.ts
 ├── main.ts
-├── config.ts
-└── deploy-commands.ts
+└── config.ts
