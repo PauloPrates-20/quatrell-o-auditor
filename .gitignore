@@ -12,5 +12,6 @@ out/
 dist/
 build/
 
-# Control files
+# local data files
 src/lib/Scheduler/stats.json
+src/lib/Scheduler/messageList.txt
