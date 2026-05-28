@@ -61,4 +61,3 @@ lib
     history.ts
 main.ts
 config.ts
-deploy-commands.ts
