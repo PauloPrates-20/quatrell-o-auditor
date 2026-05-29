@@ -1,6 +1,6 @@
 {
     "name": "terrasagrada-utility-bot",
-    "version": "4.3.1",
+    "version": "4.3.2",
     "description": "Um bot simples para automatizar algumas tarefas do servidor de rpg Terra Sagrada",
     "main": "main.js",
     "scripts": {
@@ -16,16 +16,16 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "discord.js": "^14.18.0",
-        "dotenv": "^16.4.7",
-        "express": "^4.21.2",
-        "firebase-admin": "^13.7.0"
+        "discord.js": "14.18.0",
+        "dotenv": "16.4.7",
+        "express": "4.21.2",
+        "firebase-admin": "13.7.0"
     },
     "devDependencies": {
-        "@types/express": "^5.0.1",
-        "cross-env": "^7.0.3",
-        "ts-node-dev": "^2.0.0",
-        "tsx": "^4.21.0",
-        "typescript": "^5.7.3"
+        "@types/express": "5.0.1",
+        "cross-env": "7.0.3",
+        "ts-node-dev": "2.0.0",
+        "tsx": "4.21.0",
+        "typescript": "5.7.3"
     }
 }
