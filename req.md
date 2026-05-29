@@ -80,6 +80,7 @@
 - Registros detalhadas das transações
 - Recuperação dos dados das transações
 - Registro de aventuras
+- Registros locais do sistema
 
 #### Mensageria
 
@@ -96,26 +97,25 @@
 
 ##### Cliente
 
-| Comando | Subcomandos | Argumentos |
-| ------- | ----------- | ---------- |
-| Banco   | Depositar, retirar, transferir | quantidade, origem, alvo? |
-| Tesouro | Depositar, retirar, transferir | quantidade, origem, alvo? |
-| Personagem | Adicionar, remover, renomear, add-xp, sub-xp | nome, novo-nome?, quantidade? |
-| Loja | Comprar, vender | nome, quantidade, valor? |
-| Baú  | Depositar, retirar, transferir | nome, quantidade, alvo? |
-| Sintonia | Sintonizar, dessintonizar | nome, inicio |
-| Forja | Reforjar | base, novo, valor |
-| Listar | - | - |
-| Registrar | - | - |
-| Cancelar | - | lançamento |
+| Comando | Subcomandos | Argumentos | Descrição |
+| ------- | ----------- | ---------- | --------- |
+| Banco   | Depositar, retirar, transferir | quantidade, origem, alvo? | Gerencia as operações de depósito, retirada e transferência de ouro do jogador |
+| Tesouro | Depositar, retirar, transferir | quantidade, origem, tipo, alvo? | Gerencia as operações de depósito, retirada e transferência de gemas do jogador |
+| Personagem | Adicionar, remover, renomear, add-xp, sub-xp, listar | nome, novo-nome?, quantidade? | Gerenciamento de personagens do jogador |
+| Loja | Comprar, vender | nome, quantidade, valor? | Gerencia a compra e venda de itens do jogador |
+| Baú  | Depositar, retirar, transferir | nome, quantidade, alvo? | Gerencia o inventário do jogador |
+| Sintonia | Sintonizar, dessintonizar | nome, inicio | Gerencia a sintonização de itens do jogador |
+| Forja | Reforjar | base, novo, valor | Gerencia upgrades e alterações de itens do jogador |
+| Registrar | - | - | Cadastra um jogador na base de dados |
+| Cancelar | - | lançamento | Cancela uma operação realizada pelo jogador |
 
 ##### Admin
 
-| Comando | Subcomandos | Argumentos |
-| ------- | ----------- | ---------- |
-| Banir   | - | alvo |
-| ajustar | ouro, gemas, xp | alvo, quantidade, personagem? |
-| remover | - | alvo |
+| Comando | Subcomandos | Argumentos | Descrição |
+| ------- | ----------- | ---------- | --------- |
+| Banir   | - | alvo | Bane o jogador alvo |
+| ajustar | ouro, gemas, xp | alvo, quantidade, tipo?, personagem? | Ajusta a quantidade de ouro, gemas ou xp de um jogador |
+| remover | - | alvo | Remove os dados de um jogador da base de dados |
 
 ### API
 

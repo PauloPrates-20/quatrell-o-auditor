@@ -2,7 +2,11 @@
 ├── @types/
 │   └── definitions.d.ts
 ├── api/
-│   └── router.ts
+│   ├── router.ts
+│   ├── /buy/
+│   │   └── buy.ts
+│   └── /reforge/
+│       └── reforge.ts
 ├── commands/
 │   ├── admin/
 │   │   ├── ban.ts
@@ -20,9 +24,11 @@
 │       ├── registrar.ts
 │       ├── listar.ts
 │       └── cancelar.ts
-├── data/
+├── Data/
 │   └── eventMessages/
 │       └── messageControl.json
+├── Logs/
+│   └── system.txt
 ├── lib/
 │   ├── Services/
 │   │   ├── AdventureManager.ts
@@ -32,6 +38,7 @@
 │   │   ├── CharacterService.ts
 │   │   ├── BotClientService.ts
 │   │   ├── InvetoryService.ts
+│   │   ├── ShopService.ts
 │   │   ├── Messaging/
 │   │   │   ├── EventMessager.ts
 │   │   │   ├── BankMessager.ts
@@ -46,7 +53,7 @@
 │   │   ├── CommandHandler/
 │   │   │   ├── deployCommands.ts
 │   │   │   ├── handleAutocomplete.ts
-│   │   │   ├── handleStandard.ts
+│   │   │   ├── handleStandardInteraction.ts
 │   │   │   └── handleCollection.ts
 │   │   ├── Logger/
 │   │   │   ├── Logger.ts
@@ -70,7 +77,7 @@
 │   │   └── Adventure.ts
 │   └── Cache/
 │       ├── playerList.ts
-│       └── history.ts
+│       └── adventureList.ts
 ├── main.ts
 ├── config.ts
 └── .env
